@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Building Agent Pipeline on Claude API</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+    padding: 40px 16px 60px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 48px; }
+  .header-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 50px; padding: 6px 18px; margin-bottom: 20px;
+    font-size: 12px; font-weight: 700; color: #58a6ff; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .header h1 { font-size: 34px; font-weight: 900; color: #f0f6fc; letter-spacing: -0.8px; margin-bottom: 10px; }
+  .header p { color: #8b949e; font-size: 15px; max-width: 560px; margin: 0 auto; line-height: 1.6; }
+
+  /* ANSWER BOX */
+  .answer-box {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(163,113,247,0.08));
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 16px; padding: 24px 28px; margin-bottom: 48px;
+  }
+  .answer-box h2 { font-size: 16px; font-weight: 800; color: #58a6ff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .answer-box p { font-size: 14px; color: #c9d1d9; line-height: 1.7; }
+  .answer-box strong { color: #f0f6fc; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    color: #8b949e; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #21262d; }
+
+  /* ── DIAGRAM 1: HOW CLAUDE POWERS EACH AGENT ── */
+  .diagram-card {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 16px; padding: 32px 28px; margin-bottom: 40px;
+  }
+  .diagram-title { font-size: 16px; font-weight: 800; color: #f0f6fc; margin-bottom: 6px; }
+  .diagram-sub { font-size: 13px; color: #8b949e; margin-bottom: 28px; }
+
+  /* HOW ONE AGENT CALL WORKS */
+  .agent-call-flow {
+    display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    background: #0d1117; border: 1px solid #21262d; border-radius: 12px; overflow: hidden;
+  }
+  .acf-step {
+    flex: 1; min-width: 140px; padding: 18px 16px; position: relative;
+    border-right: 1px solid #21262d;
+  }
+  .acf-step:last-child { border-right: none; }
+  .acf-step-num {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    color: #8b949e; margin-bottom: 8px;
+  }
+  .acf-step-icon { font-size: 22px; margin-bottom: 8px; }
+  .acf-step-title { font-size: 13px; font-weight: 700; color: #f0f6fc; margin-bottom: 6px; }
+  .acf-step-desc { font-size: 11.5px; color: #8b949e; line-height: 1.5; }
+  .acf-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; color: #30363d; font-size: 18px; align-self: center;
+  }
+
+  /* ── BIG ARCHITECTURE DIAGRAM ── */
+  .arch-diagram { margin-bottom: 40px; }
+
+  /* YOU (Developer) */
+  .you-box {
+    text-align: center; margin-bottom: 0;
+  }
+  .you-node {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #1f2d3d, #162032);
+    border: 2px solid #388bfd; border-radius: 12px; padding: 14px 28px;
+    font-weight: 800; font-size: 15px; color: #58a6ff;
+  }
+
+  .v-arrow { display: flex; justify-content: center; margin: 6px 0; }
+  .v-arrow-inner { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .v-line { width: 2px; height: 24px; }
+  .v-tip { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; }
+
+  /* ORCHESTRATOR */
+  .orchestrator-box {
+    background: linear-gradient(135deg, #1a1033, #12092a);
+    border: 2px solid #a371f7;
+    border-radius: 16px; padding: 24px 24px; margin-bottom: 0; position: relative;
+    overflow: hidden;
+  }
+  .orchestrator-box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #a371f7, #58a6ff, #3fb950);
+  }
+  .orch-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .orch-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, #a371f7, #7c3aed);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .orch-title { font-size: 16px; font-weight: 800; color: #d2a8ff; }
+  .orch-sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+
+  .orch-details {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+  }
+  .orch-detail-item {
+    background: rgba(163,113,247,0.07); border: 1px solid rgba(163,113,247,0.2);
+    border-radius: 8px; padding: 10px 12px;
+  }
+  .orch-detail-label { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #a371f7; margin-bottom: 5px; }
+  .orch-detail-val { font-size: 12px; color: #c9d1d9; line-height: 1.5; font-family: 'JetBrains Mono', monospace; }
+
+  /* SHARED CONTEXT */
+  .shared-ctx {
+    display: flex; justify-content: center; margin: 8px 0;
+  }
+  .shared-ctx-inner {
+    background: #161b22; border: 1px dashed #30363d;
+    border-radius: 10px; padding: 8px 20px;
+    font-size: 12px; color: #8b949e; display: flex; align-items: center; gap: 8px;
+  }
+
+  /* AGENTS GRID */
+  .agents-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 0;
+  }
+  @media(max-width:640px) { .agents-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media(max-width:400px) { .agents-grid { grid-template-columns: 1fr; } }
+
+  .agent-node {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 10px; padding: 12px 14px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: default;
+  }
+  .agent-node:hover { border-color: #58a6ff; transform: translateY(-2px); }
+  .agent-node-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .agent-node-icon { font-size: 16px; }
+  .agent-node-name { font-size: 12px; font-weight: 700; color: #f0f6fc; }
+  .agent-node-role { font-size: 11px; color: #8b949e; margin-bottom: 8px; }
+  .agent-node-calls {
+    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+    color: #3fb950; background: rgba(63,185,80,0.08);
+    border: 1px solid rgba(63,185,80,0.2); border-radius: 5px;
+    padding: 3px 7px; display: inline-block;
+  }
+
+  /* CLAUDE API BOX */
+  .claude-api-section { margin: 10px 0; }
+  .claude-api-box {
+    background: linear-gradient(135deg, #0d2137, #0a1628);
+    border: 2px solid #388bfd; border-radius: 14px; padding: 20px 24px;
+    position: relative; overflow: hidden;
+  }
+  .claude-api-box::after {
+    content: 'CLAUDE API'; position: absolute; right: 20px; top: 50%;
+    transform: translateY(-50%); font-size: 48px; font-weight: 900;
+    color: rgba(88,166,255,0.04); letter-spacing: -2px;
+    font-family: 'Inter', sans-serif; white-space: nowrap;
+  }
+  .cab-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .cab-logo {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, #388bfd, #1f6feb);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .cab-title { font-size: 16px; font-weight: 800; color: #79c0ff; }
+  .cab-sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
+
+  .cab-models { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .model-tag {
+    background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #58a6ff;
+  }
+
+  .cab-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+  .cab-feat {
+    background: rgba(88,166,255,0.05); border: 1px solid rgba(88,166,255,0.15);
+    border-radius: 7px; padding: 8px 10px;
+    font-size: 11.5px; color: #c9d1d9; display: flex; align-items: flex-start; gap: 7px;
+  }
+  .cab-feat-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* TOOLS SECTION */
+  .tools-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .tool-chip {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 8px; padding: 8px 14px; font-size: 12px;
+    color: #c9d1d9; display: flex; align-items: center; gap: 7px;
+    font-weight: 600;
+  }
+  .tool-chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #0d1117; border: 1px solid #21262d;
+    border-radius: 10px; padding: 16px 18px; margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #e6edf3; line-height: 1.7; overflow-x: auto;
+  }
+  .code-comment { color: #8b949e; }
+  .code-key { color: #79c0ff; }
+  .code-string { color: #a5d6ff; }
+  .code-fn { color: #d2a8ff; }
+  .code-val { color: #7ee787; }
+  .code-bracket { color: #e6edf3; }
+
+  /* HOW IT FLOWS — STEP BY STEP */
+  .flow-steps { display: flex; flex-direction: column; gap: 0; }
+  .flow-step {
+    display: flex; gap: 16px; align-items: flex-start; position: relative;
+  }
+  .flow-step:not(:last-child) .flow-step-line {
+    position: absolute; left: 19px; top: 40px; bottom: -10px; width: 2px; background: #21262d; z-index: 0;
+  }
+  .flow-step-num {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; z-index: 1; position: relative;
+  }
+  .flow-step-content { flex: 1; padding-bottom: 24px; }
+  .flow-step-title { font-size: 14px; font-weight: 700; color: #f0f6fc; margin-bottom: 5px; }
+  .flow-step-desc { font-size: 12.5px; color: #8b949e; line-height: 1.6; }
+  .flow-step-code {
+    margin-top: 8px; background: #0d1117; border: 1px solid #21262d;
+    border-radius: 7px; padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #7ee787; line-height: 1.6;
+  }
+
+  /* WHAT CLAUDE CAN + CANNOT */
+  .can-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+  @media(max-width:560px) { .can-grid { grid-template-columns: 1fr; } }
+
+  .can-box {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 12px; padding: 20px;
+  }
+  .can-box-title {
+    font-size: 13px; font-weight: 800; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .can-item {
+    display: flex; gap: 9px; align-items: flex-start; margin-bottom: 10px;
+    font-size: 12.5px; color: #c9d1d9; line-height: 1.5;
+  }
+  .can-icon { flex-shrink: 0; font-size: 13px; margin-top: 2px; }
+
+  /* STACK RECOMMENDATION */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .stack-item {
+    background: #161b22; border: 1px solid #21262d;
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .stack-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #8b949e; margin-bottom: 6px; }
+  .stack-val { font-size: 13px; font-weight: 700; color: #f0f6fc; }
+  .stack-note { font-size: 11px; color: #8b949e; margin-top: 3px; }
+
+  /* HITL note */
+  .hitl-note {
+    background: rgba(210,168,255,0.07); border: 1px solid rgba(163,113,247,0.25);
+    border-radius: 10px; padding: 14px 16px; margin-top: 20px;
+    font-size: 12.5px; color: #c9d1d9; line-height: 1.6;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">⚡ Architecture Guide</div>
+    <h1>Building the Agent Pipeline<br>on Claude API</h1>
+    <p>Yes — you can build the entire 18-agent automation using Claude's API. Here's exactly how it works.</p>
+  </div>
+
+  <!-- ANSWER BOX -->
+  <div class="answer-box">
+    <h2>💡 Short Answer</h2>
+    <p>
+      <strong>Yes, absolutely.</strong> Each "agent" in your pipeline is simply a <strong>Claude API call with a specific system prompt</strong> that defines its role, inputs it receives, and outputs it should produce. Your code (Python/Node.js) acts as the <strong>Orchestrator</strong> — it calls Claude for each agent in sequence, passes the output of one agent as the input to the next, and stores everything in a <strong>Shared Context Store</strong> (a database or file system). Claude does the thinking; your orchestrator does the routing.
+    </p>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- DIAGRAM 1: HOW ONE AGENT CALL WORKS -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-label">How a single agent call works</div>
+
+  <div class="diagram-card" style="margin-bottom:40px">
+    <div class="diagram-title">Anatomy of One Agent → One Claude API Call</div>
+    <div class="diagram-sub">Every agent in the pipeline follows this exact pattern</div>
+
+    <div class="agent-call-flow">
+      <div class="acf-step">
+        <div class="acf-step-num">Step 1</div>
+        <div class="acf-step-icon">🗄️</div>
+        <div class="acf-step-title">Read Context</div>
+        <div class="acf-step-desc">Orchestrator loads relevant files from Shared Context Store for this agent</div>
+      </div>
+      <div class="acf-arrow">→</div>
+      <div class="acf-step">
+        <div class="acf-step-num">Step 2</div>
+        <div class="acf-step-icon">📝</div>
+        <div class="acf-step-title">Build Prompt</div>
+        <div class="acf-step-desc">System prompt = agent role. User message = context + task + previous outputs</div>
+      </div>
+      <div class="acf-arrow">→</div>
+      <div class="acf-step" style="background:rgba(88,166,255,0.04)">
+        <div class="acf-step-num">Step 3</div>
+        <div class="acf-step-icon">🤖</div>
+        <div class="acf-step-title">Claude API Call</div>
+        <div class="acf-step-desc">POST /v1/messages with model, system prompt, and full context as messages</div>
+      </div>
+      <div class="acf-arrow">→</div>
+      <div class="acf-step">
+        <div class="acf-step-num">Step 4</div>
+        <div class="acf-step-icon">✂️</div>
+        <div class="acf-step-title">Parse Output</div>
+        <div class="acf-step-desc">Extract structured output (JSON/Markdown) from Claude's response</div>
+      </div>
+      <div class="acf-arrow">→</div>
+      <div class="acf-step">
+        <div class="acf-step-num">Step 5</div>
+        <div class="acf-step-icon">💾</div>
+        <div class="acf-step-title">Write Context</div>
+        <div class="acf-step-desc">Save agent outputs back to Shared Context Store for next agents to use</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- DIAGRAM 2: FULL ARCHITECTURE -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-label">Full system architecture</div>
+
+  <!-- YOU (Developer) -->
+  <div class="you-box">
+    <div class="you-node">👤 You (Developer) — Write the Orchestrator code</div>
+  </div>
+
+  <div class="v-arrow"><div class="v-arrow-inner">
+    <div class="v-line" style="background:#388bfd"></div>
+    <div class="v-tip" style="border-top-color:#388bfd"></div>
+  </div></div>
+
+  <!-- ORCHESTRATOR -->
+  <div class="orchestrator-box">
+    <div class="orch-header">
+      <div class="orch-icon">🎯</div>
+      <div>
+        <div class="orch-title">Your Orchestrator (Python / Node.js / TypeScript)</div>
+        <div class="orch-sub">The brain that sequences agents, passes context, handles HITL, manages retries</div>
+      </div>
+    </div>
+    <div class="orch-details">
+      <div class="orch-detail-item">
+        <div class="orch-detail-label">What it does</div>
+        <div class="orch-detail-val">Calls Claude API for each agent in sequence</div>
+      </div>
+      <div class="orch-detail-item">
+        <div class="orch-detail-label">State Machine</div>
+        <div class="orch-detail-val">Tracks pipeline state, current agent, retries</div>
+      </div>
+      <div class="orch-detail-item">
+        <div class="orch-detail-label">HITL Handler</div>
+        <div class="orch-detail-val">Pauses pipeline, notifies human, waits for approval</div>
+      </div>
+      <div class="orch-detail-item">
+        <div class="orch-detail-label">Parallel Runner</div>
+        <div class="orch-detail-val">Fires 4 Junior agents with Promise.all() / asyncio.gather()</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARED CONTEXT -->
+  <div class="shared-ctx">
+    <div class="shared-ctx-inner">
+      ↕️ &nbsp;Reads &amp; writes to &nbsp;
+      <strong style="color:#f0f6fc">🗄️ Shared Context Store</strong>
+      &nbsp;(PostgreSQL / Redis / S3 / local filesystem)
+    </div>
+  </div>
+
+  <!-- DOWN ARROW TO AGENTS -->
+  <div class="v-arrow"><div class="v-arrow-inner">
+    <div class="v-line" style="background:#3fb950"></div>
+    <div class="v-tip" style="border-top-color:#3fb950"></div>
+  </div></div>
+
+  <!-- AGENTS GRID -->
+  <div style="background:#0d1117; border:1px dashed #21262d; border-radius:14px; padding:20px; margin-bottom:0;">
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:#3fb950; margin-bottom:14px;">
+      18 Agents — Each is a separate Claude API call with its own System Prompt
+    </div>
+    <div class="agents-grid">
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">👤</span><span class="agent-node-name">Input Layer</span></div>
+        <div class="agent-node-role">Parses & validates user input</div>
+        <span class="agent-node-calls">1 API call</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🔍</span><span class="agent-node-name">Req. Analyst</span></div>
+        <div class="agent-node-role">Extracts FR, NFR, personas</div>
+        <span class="agent-node-calls">1–3 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">📋</span><span class="agent-node-name">PM Agent</span></div>
+        <div class="agent-node-role">Creates epics, tasks, timeline</div>
+        <span class="agent-node-calls">2–4 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🏗️</span><span class="agent-node-name">Architecture</span></div>
+        <div class="agent-node-role">Tech stack, DB, API design</div>
+        <span class="agent-node-calls">2–5 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🔒</span><span class="agent-node-name">Security</span></div>
+        <div class="agent-node-role">OWASP audit, checklist</div>
+        <span class="agent-node-calls">1–2 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🎨</span><span class="agent-node-name">Design Agent</span></div>
+        <div class="agent-node-role">Design system, wireframes</div>
+        <span class="agent-node-calls">3–6 API calls</span>
+      </div>
+
+      <div class="agent-node" style="border-color:rgba(88,166,255,0.3)">
+        <div class="agent-node-top"><span class="agent-node-icon">💻</span><span class="agent-node-name">FE Senior</span></div>
+        <div class="agent-node-role">Plans, assigns, reviews FE</div>
+        <span class="agent-node-calls">parallel × 4</span>
+      </div>
+
+      <div class="agent-node" style="border-color:rgba(63,185,80,0.3)">
+        <div class="agent-node-top"><span class="agent-node-icon">🖥️</span><span class="agent-node-name">BE Senior</span></div>
+        <div class="agent-node-role">Plans, assigns, reviews BE</div>
+        <span class="agent-node-calls">parallel × 4</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">⚡</span><span class="agent-node-name">FE/BE Gates</span></div>
+        <div class="agent-node-role">Code review, pass/fail</div>
+        <span class="agent-node-calls">n per module</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🔗</span><span class="agent-node-name">Integration</span></div>
+        <div class="agent-node-role">Connects FE ↔ BE</div>
+        <span class="agent-node-calls">2–4 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🧪</span><span class="agent-node-name">QA Agent</span></div>
+        <div class="agent-node-role">Generates & runs all tests</div>
+        <span class="agent-node-calls">8 sub-agents</span>
+      </div>
+
+      <div class="agent-node" style="border-color:rgba(248,81,73,0.3)">
+        <div class="agent-node-top"><span class="agent-node-icon">🔁</span><span class="agent-node-name">Fix Loop</span></div>
+        <div class="agent-node-role">Bug assign → fix → retest</div>
+        <span class="agent-node-calls">loop × retries</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">🚀</span><span class="agent-node-name">DevOps</span></div>
+        <div class="agent-node-role">Docker, CI/CD, deploy</div>
+        <span class="agent-node-calls">4–8 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">📊</span><span class="agent-node-name">Observability</span></div>
+        <div class="agent-node-role">Monitoring, alerts, APM</div>
+        <span class="agent-node-calls">2–4 API calls</span>
+      </div>
+
+      <div class="agent-node">
+        <div class="agent-node-top"><span class="agent-node-icon">📚</span><span class="agent-node-name">Docs Agent</span></div>
+        <div class="agent-node-role">README, API docs, guides</div>
+        <span class="agent-node-calls">5–10 API calls</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DOWN ARROW TO CLAUDE API -->
+  <div class="v-arrow" style="margin:8px 0"><div class="v-arrow-inner">
+    <div class="v-line" style="background:#388bfd; height:32px"></div>
+    <div class="v-tip" style="border-top-color:#388bfd"></div>
+  </div></div>
+
+  <!-- CLAUDE API BOX -->
+  <div class="claude-api-box">
+    <div class="cab-header">
+      <div class="cab-logo">⚡</div>
+      <div>
+        <div class="cab-title">Anthropic Claude API — /v1/messages</div>
+        <div class="cab-sub">All 18 agents make calls here. Claude is the reasoning engine for every step.</div>
+      </div>
+    </div>
+    <div class="cab-models">
+      <span class="model-tag">claude-opus-4-5 (complex agents)</span>
+      <span class="model-tag">claude-sonnet-4-5 (standard agents)</span>
+      <span class="model-tag">claude-haiku-4-5 (fast checks)</span>
+    </div>
+    <div class="cab-features">
+      <div class="cab-feat"><span class="cab-feat-icon">🧠</span>200K token context window — fits entire codebase</div>
+      <div class="cab-feat"><span class="cab-feat-icon">🛠️</span>Tool use — agents call bash, file system, APIs</div>
+      <div class="cab-feat"><span class="cab-feat-icon">📦</span>Structured output — JSON, Markdown, code</div>
+      <div class="cab-feat"><span class="cab-feat-icon">🔄</span>Multi-turn — agents have full conversation history</div>
+      <div class="cab-feat"><span class="cab-feat-icon">⚡</span>Streaming — see output token by token</div>
+      <div class="cab-feat"><span class="cab-feat-icon">🔀</span>Batch API — run parallel agents cheaply</div>
+    </div>
+  </div>
+
+  <br/>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- STEP BY STEP FLOW -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-label" style="margin-top:48px">Step-by-step: what actually happens at runtime</div>
+
+  <div class="diagram-card">
+    <div class="flow-steps">
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(88,166,255,0.15); color:#58a6ff;">1</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">User submits project description</div>
+          <div class="flow-step-desc">Your UI collects the requirement. Orchestrator starts pipeline. Creates a unique <code style="color:#7ee787">run_id</code> and initializes the Shared Context Store.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(163,113,247,0.15); color:#a371f7;">2</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Orchestrator calls Claude for Agent #2 — Requirement Analyst</div>
+          <div class="flow-step-desc">Passes system prompt defining the analyst role + user input as the message. Claude responds with structured requirements.</div>
+          <div class="flow-step-code">
+POST /v1/messages<br/>
+system: "You are a Requirement Analyst. Extract FR, NFR, personas..."<br/>
+user: "Build me a SaaS CRM with payments and notifications"<br/>
+→ Claude returns: requirements.md, personas.md, complexity_score.json
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(63,185,80,0.15); color:#3fb950;">3</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Output saved to Shared Context Store</div>
+          <div class="flow-step-desc">Orchestrator parses Claude's response and saves each file to the database. All future agents will load these files as context.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(210,168,255,0.15); color:#d2a8ff;">4</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Repeat for each sequential agent (PM → Arch → Security → Design)</div>
+          <div class="flow-step-desc">Each agent gets: its unique system prompt + all relevant outputs from previous agents loaded into the context. The chain grows richer at each step.</div>
+          <div class="flow-step-code">
+<span style="color:#8b949e">// PM Agent gets requirements from analyst</span><br/>
+system: "You are a Project Manager. Create epics from requirements..."<br/>
+user: [requirements.md content] + "Create sprint plan"<br/>
+→ returns: epics.md, tasks.json, sprint_plan.md
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(248,140,0,0.15); color:#e3b341;">5</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">HITL Checkpoint — Pipeline pauses, human is notified</div>
+          <div class="flow-step-desc">After PM Agent, orchestrator stops and sends a notification (email/Slack/webhook). Human reviews the epic/scope. On approval, orchestrator resumes from the next step.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(88,166,255,0.15); color:#58a6ff;">6</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Parallel execution — Frontend & Backend Junior agents</div>
+          <div class="flow-step-desc">Orchestrator fires 4 Frontend Junior API calls simultaneously using <code style="color:#7ee787">Promise.all()</code> (Node) or <code style="color:#7ee787">asyncio.gather()</code> (Python). Each Junior gets a different module-specific system prompt.</div>
+          <div class="flow-step-code">
+<span style="color:#8b949e">// Fire all 4 juniors at once</span><br/>
+await Promise.all([<br/>
+&nbsp;&nbsp;callClaude("auth_module_agent", context),<br/>
+&nbsp;&nbsp;callClaude("dashboard_agent", context),<br/>
+&nbsp;&nbsp;callClaude("admin_panel_agent", context),<br/>
+&nbsp;&nbsp;callClaude("shared_components_agent", context)<br/>
+])
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-line"></div>
+        <div class="flow-step-num" style="background:rgba(248,81,73,0.15); color:#f85149;">7</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Fix Loop — Orchestrator manages retries automatically</div>
+          <div class="flow-step-desc">QA Agent returns <code style="color:#7ee787">bug_report.json</code>. Orchestrator loops: assigns bug → calls Claude to fix → calls Claude to retest. Max 3 retries. On failure, notifies human.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-step-num" style="background:rgba(63,185,80,0.15); color:#3fb950;">8</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Pipeline complete — Final product delivered</div>
+          <div class="flow-step-desc">All agents done. Orchestrator compiles final report, closes run, sends completion notification with live URLs, docs links, and cost report.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- WHAT CLAUDE CAN VS CANNOT DO ALONE -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-label" style="margin-top:48px">What Claude handles vs what your orchestrator handles</div>
+
+  <div class="can-grid">
+    <div class="can-box" style="border-color:rgba(63,185,80,0.25)">
+      <div class="can-box-title" style="color:#3fb950">✅ Claude API handles</div>
+      <div class="can-item"><span class="can-icon">🧠</span>All reasoning, writing, planning, design decisions</div>
+      <div class="can-item"><span class="can-icon">💻</span>Writing all code (frontend, backend, tests, config)</div>
+      <div class="can-item"><span class="can-icon">🔍</span>Reviewing code and finding bugs</div>
+      <div class="can-item"><span class="can-icon">📝</span>Generating documentation, specs, schemas</div>
+      <div class="can-item"><span class="can-icon">🏗️</span>Architecture and tech stack decisions</div>
+      <div class="can-item"><span class="can-icon">🧪</span>Writing test cases and test scripts</div>
+      <div class="can-item"><span class="can-icon">🔒</span>Security audits and compliance checks</div>
+    </div>
+    <div class="can-box" style="border-color:rgba(248,140,0,0.25)">
+      <div class="can-box-title" style="color:#e3b341">⚙️ Your Orchestrator handles</div>
+      <div class="can-item"><span class="can-icon">🔄</span>Calling agents in the right order</div>
+      <div class="can-item"><span class="can-icon">💾</span>Saving/loading context between agents</div>
+      <div class="can-item"><span class="can-icon">⚡</span>Running junior agents in parallel</div>
+      <div class="can-item"><span class="can-icon">🔁</span>Managing retry loops with counters</div>
+      <div class="can-item"><span class="can-icon">👁️</span>HITL pausing, notifying, resuming</div>
+      <div class="can-item"><span class="can-icon">🛠️</span>Actually executing code (bash, git, docker)</div>
+      <div class="can-item"><span class="can-icon">📊</span>Tracking cost, tokens, duration per agent</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- RECOMMENDED TECH STACK -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-label">Recommended tech stack to build this</div>
+
+  <div class="diagram-card">
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-label">Orchestrator Language</div>
+        <div class="stack-val">Python 3.11+</div>
+        <div class="stack-note">or Node.js / TypeScript</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Claude SDK</div>
+        <div class="stack-val">anthropic Python SDK</div>
+        <div class="stack-note">pip install anthropic</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Workflow Engine</div>
+        <div class="stack-val">LangGraph / Prefect</div>
+        <div class="stack-note">manages state machine & retries</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Shared Context DB</div>
+        <div class="stack-val">PostgreSQL + Redis</div>
+        <div class="stack-note">files in DB, fast cache in Redis</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">File Storage</div>
+        <div class="stack-val">S3 / Local FS</div>
+        <div class="stack-note">stores generated code files</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Parallel Execution</div>
+        <div class="stack-val">asyncio.gather()</div>
+        <div class="stack-note">fires 4 juniors simultaneously</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">HITL Notifications</div>
+        <div class="stack-val">Slack API / Email</div>
+        <div class="stack-note">notifies human at checkpoints</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Code Execution</div>
+        <div class="stack-val">Docker sandbox</div>
+        <div class="stack-note">safely runs generated tests/code</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Frontend Dashboard</div>
+        <div class="stack-val">Next.js</div>
+        <div class="stack-note">monitor pipeline runs live</div>
+      </div>
+    </div>
+
+    <div class="hitl-note">
+      <span style="font-size:18px; flex-shrink:0;">💡</span>
+      <span>
+        <strong style="color:#f0f6fc">Claude Code</strong> (Anthropic's CLI tool) is the closest existing product to this — it already runs Claude as an agent that writes, edits, and executes code. You can use it as a building block or study its architecture. For a custom multi-agent pipeline, you'd build the orchestrator yourself using the <strong style="color:#f0f6fc">Anthropic Python/Node SDK</strong> and wire the agents together as described above.
+      </span>
+    </div>
+  </div>
+
+  <!-- CODE EXAMPLE -->
+  <div class="section-label" style="margin-top:40px">Minimal orchestrator code pattern</div>
+  <div class="diagram-card">
+    <div class="diagram-title">Core Pattern — How Every Agent Call Looks in Code</div>
+    <div class="code-block">
+<span class="code-comment"># Every agent follows this exact pattern</span><br/>
+<span class="code-key">import</span> anthropic<br/>
+<br/>
+client = anthropic.Anthropic()  <span class="code-comment"># your API key auto-loaded from env</span><br/>
+<br/>
+<span class="code-fn">async def</span> <span class="code-key">run_agent</span>(agent_name: str, context: dict) -> dict:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 1. Build system prompt for this specific agent</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;system_prompt = AGENT_PROMPTS[agent_name]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 2. Load relevant context files from shared store</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;relevant_files = load_context(agent_name, context[<span class="code-string">"run_id"</span>])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 3. Call Claude API</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;response = client.messages.create(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model=<span class="code-string">"claude-opus-4-5"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;max_tokens=<span class="code-val">8096</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;system=system_prompt,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;messages=[{<span class="code-string">"role"</span>: <span class="code-string">"user"</span>, <span class="code-string">"content"</span>: relevant_files}]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 4. Parse output and save to shared context</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;outputs = parse_agent_output(response.content[<span class="code-val">0</span>].text)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;save_context(context[<span class="code-string">"run_id"</span>], agent_name, outputs)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">return</span> outputs<br/>
+<br/>
+<span class="code-comment"># Run parallel junior agents</span><br/>
+results = <span class="code-key">await</span> asyncio.gather(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;run_agent(<span class="code-string">"fe_auth"</span>, ctx),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;run_agent(<span class="code-string">"fe_dashboard"</span>, ctx),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;run_agent(<span class="code-string">"fe_admin"</span>, ctx),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;run_agent(<span class="code-string">"fe_shared"</span>, ctx)<br/>
+)
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

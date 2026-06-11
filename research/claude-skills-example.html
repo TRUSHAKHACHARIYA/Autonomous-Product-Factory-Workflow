@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Claude Skills — Short Example</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8f9fc; color: #1a1d27; padding: 32px 16px 60px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 36px; }
+  .header h1 { font-size: 30px; font-weight: 900; letter-spacing: -0.8px; color: #111827; margin-bottom: 8px; }
+  .header h1 span { color: #7c3aed; }
+  .header p { color: #6b7280; font-size: 14px; }
+
+  /* STEP LABEL */
+  .step-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .step-label::after { content: ''; flex: 1; height: 1.5px; background: #e5e7eb; }
+
+  /* CONNECTOR */
+  .connector { display: flex; justify-content: center; margin: 10px 0; }
+  .conn-inner { display: flex; flex-direction: column; align-items: center; }
+  .conn-line { width: 2px; height: 28px; }
+  .conn-tip { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; }
+
+  /* CARDS */
+  .card {
+    background: white; border: 1.5px solid #e5e7eb;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 6px;
+  }
+  .card-header {
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .card-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 800; color: #111827; }
+  .card-sub { font-size: 12px; margin-top: 2px; }
+  .card-body { padding: 0 20px 20px; }
+
+  /* CODE BLOCK */
+  .code {
+    background: #0d1117; border-radius: 10px; padding: 16px 18px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #e6edf3; line-height: 1.8; overflow-x: auto;
+  }
+  .c-comment { color: #8b949e; }
+  .c-key { color: #79c0ff; font-weight: 700; }
+  .c-val { color: #7ee787; }
+  .c-str { color: #a5d6ff; }
+  .c-head { color: #d2a8ff; font-weight: 700; }
+
+  /* CHAT BUBBLES */
+  .chat { display: flex; flex-direction: column; gap: 0; }
+  .chat-turn { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px dashed #e5e7eb; align-items: flex-start; }
+  .chat-turn:last-child { border-bottom: none; padding-bottom: 0; }
+  .chat-avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;
+  }
+  .chat-content { flex: 1; }
+  .chat-name { font-size: 11px; font-weight: 800; margin-bottom: 4px; }
+  .chat-text { font-size: 13px; color: #374151; line-height: 1.6; }
+  .chat-code {
+    margin-top: 8px; background: #f9fafb; border: 1px solid #e5e7eb;
+    border-radius: 8px; padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    color: #374151; line-height: 1.75;
+  }
+  .chat-code .green { color: #059669; font-weight: 700; }
+  .chat-code .purple { color: #7c3aed; font-weight: 700; }
+  .chat-code .gray { color: #9ca3af; }
+  .chat-code .blue { color: #1d4ed8; }
+
+  /* OUTPUT BOX */
+  .output-box {
+    background: #f0fdf4; border: 1.5px solid #86efac;
+    border-radius: 10px; padding: 14px 16px; margin-top: 10px;
+  }
+  .output-label { font-size: 10px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #15803d; margin-bottom: 8px; }
+  .output-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .output-chip {
+    background: white; border: 1px solid #86efac; border-radius: 6px;
+    padding: 3px 10px; font-size: 11.5px; font-weight: 700; color: #166534;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* SUMMARY ROW */
+  .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+  @media(max-width:500px) { .summary-row { grid-template-columns: 1fr; } }
+  .summary-item {
+    background: white; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    padding: 14px 16px; text-align: center;
+  }
+  .summary-n { font-size: 24px; font-weight: 900; color: #111827; }
+  .summary-l { font-size: 11px; color: #9ca3af; font-weight: 600; margin-top: 2px; }
+
+  /* HIGHLIGHT BOX */
+  .highlight {
+    background: linear-gradient(135deg, #faf5ff, #f0f4ff);
+    border: 1.5px solid #c4b5fd; border-radius: 12px;
+    padding: 18px 20px; margin-top: 24px;
+    font-size: 13.5px; color: #4c1d95; line-height: 1.7;
+  }
+  .highlight strong { color: #3b0764; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>One Full Example: <span>Skill → Trigger → Output</span></h1>
+    <p>Building a "Todo App" — watching Agent #2 (Requirement Analyst) run inside Claude Project</p>
+  </div>
+
+
+  <!-- ══════════════════════════════════ -->
+  <!-- STEP 1: THE SKILL FILE YOU WRITE -->
+  <!-- ══════════════════════════════════ -->
+  <div class="step-label" style="color:#7c3aed;">
+    <span style="background:#ede9fe; color:#7c3aed; border-radius:6px; padding:3px 10px;">Step 1</span>
+    You write this skill file & upload to Project Knowledge
+  </div>
+
+  <div class="card" style="border-color:#ddd6fe;">
+    <div class="card-header" style="background:#f5f3ff;">
+      <div class="card-icon" style="background:#7c3aed;">📄</div>
+      <div>
+        <div class="card-title">skill_02_analyst.md</div>
+        <div class="card-sub" style="color:#7c3aed;">Uploaded once to Project Knowledge — Claude reads this forever</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="code">
+<span class="c-head"># SKILL: Requirement Analyst Agent</span><br/><br/>
+<span class="c-key">TRIGGER:</span>   <span class="c-val">RUN: RequirementAnalyst</span><br/>
+<span class="c-key">YOUR ROLE:</span> You are a Senior Business Analyst.<br/><br/>
+<span class="c-key">WHEN ACTIVATED:</span><br/>
+1. Read the user's project description from this conversation<br/>
+2. Extract all Functional Requirements (what the app must DO)<br/>
+3. Extract Non-Functional Requirements (performance, security, scale)<br/>
+4. Create 2-3 user personas<br/>
+5. Score complexity: S / M / L / XL<br/><br/>
+<span class="c-key">OUTPUT EXACTLY THIS FORMAT:</span><br/><br/>
+<span class="c-str">## requirements.md</span><br/>
+### Functional Requirements<br/>
+- FR1: [requirement]<br/>
+- FR2: [requirement]<br/><br/>
+### Non-Functional Requirements<br/>
+- NFR1: [requirement]<br/><br/>
+<span class="c-str">## personas.md</span><br/>
+### Persona 1: [Name]<br/>
+- Goal: ...<br/>
+- Pain point: ...<br/><br/>
+<span class="c-str">## complexity_score.json</span><br/>
+{ "score": "M", "reason": "..." }<br/><br/>
+<span class="c-comment"># Do NOT skip any section. Full output only.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-inner">
+      <div class="conn-line" style="background:#a78bfa;"></div>
+      <div class="conn-tip" style="border-top: 9px solid #a78bfa;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- STEP 2: PROJECT INSTRUCTIONS -->
+  <!-- ══════════════════════════════════ -->
+  <div class="step-label" style="color:#0891b2;">
+    <span style="background:#ecfeff; color:#0891b2; border-radius:6px; padding:3px 10px;">Step 2</span>
+    Your Project Instructions (written once, always active)
+  </div>
+
+  <div class="card" style="border-color:#a5f3fc;">
+    <div class="card-header" style="background:#ecfeff;">
+      <div class="card-icon" style="background:#0891b2;">📌</div>
+      <div>
+        <div class="card-title">Project Instructions — Master Prompt</div>
+        <div class="card-sub" style="color:#0891b2;">This lives in your Project settings. Auto-applies to every conversation.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="code">
+You are an 18-agent software development pipeline.<br/>
+You have skill documents in your knowledge base for each agent.<br/><br/>
+<span class="c-key">RULE:</span> When I type <span class="c-val">RUN: [AgentName]</span>:<br/>
+  → Read that agent's skill document from Project Knowledge<br/>
+  → Read all previous outputs in this conversation as context<br/>
+  → Execute fully, output in the exact format from the skill doc<br/>
+  → Label every output with ## headers so future agents can find it<br/><br/>
+<span class="c-comment">Never abbreviate. Never skip. Full professional output always.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <div class="conn-inner">
+      <div class="conn-line" style="background:#6ee7b7;"></div>
+      <div class="conn-tip" style="border-top: 9px solid #6ee7b7;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- STEP 3: THE ACTUAL CONVERSATION -->
+  <!-- ══════════════════════════════════ -->
+  <div class="step-label" style="color:#15803d;">
+    <span style="background:#dcfce7; color:#15803d; border-radius:6px; padding:3px 10px;">Step 3</span>
+    The actual conversation inside your Project
+  </div>
+
+  <div class="card" style="border-color:#bbf7d0;">
+    <div class="card-header" style="background:#f0fdf4;">
+      <div class="card-icon" style="background:#15803d;">💬</div>
+      <div>
+        <div class="card-title">Claude.ai Chat — Inside Your Project</div>
+        <div class="card-sub" style="color:#15803d;">This is all you do to run the pipeline</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chat">
+
+        <!-- USER MESSAGE 1 -->
+        <div class="chat-turn">
+          <div class="chat-avatar" style="background:#e0e7ff; color:#3730a3;">👤</div>
+          <div class="chat-content">
+            <div class="chat-name" style="color:#3730a3;">You</div>
+            <div class="chat-text">
+              I want to build a <strong>Todo App</strong>. Users can create tasks, set due dates, mark complete, and share lists with teammates. Mobile + Web. RUN: RequirementAnalyst
+            </div>
+          </div>
+        </div>
+
+        <!-- CLAUDE RESPONSE -->
+        <div class="chat-turn">
+          <div class="chat-avatar" style="background:#f5f0ff; color:#6d28d9;">🤖</div>
+          <div class="chat-content">
+            <div class="chat-name" style="color:#6d28d9;">Claude — acting as Requirement Analyst Agent</div>
+            <div class="chat-text">Reading <code style="background:#f3f4f6; padding:1px 5px; border-radius:4px; font-size:11px;">skill_02_analyst.md</code> from Project Knowledge...<br/>Analysing your Todo App requirement...</div>
+            <div class="chat-code">
+<span class="purple">## requirements.md</span><br/><br/>
+<span class="blue">### Functional Requirements</span><br/>
+- FR1: User can create, edit, delete tasks<br/>
+- FR2: User can set due dates and reminders<br/>
+- FR3: User can mark tasks as complete / incomplete<br/>
+- FR4: User can create shared lists and invite teammates<br/>
+- FR5: User can assign tasks to specific team members<br/>
+- FR6: User receives notifications for due tasks<br/>
+- FR7: User can filter tasks by status, due date, assignee<br/><br/>
+<span class="blue">### Non-Functional Requirements</span><br/>
+- NFR1: App loads in &lt;2s on mobile (3G)<br/>
+- NFR2: Supports 10,000 concurrent users<br/>
+- NFR3: Data encrypted at rest and in transit<br/>
+- NFR4: 99.9% uptime SLA<br/><br/>
+<span class="purple">## personas.md</span><br/><br/>
+<span class="blue">### Persona 1: Priya — Freelance Designer</span><br/>
+- Goal: Manage client tasks without missing deadlines<br/>
+- Pain point: Loses track of tasks across email and notes<br/><br/>
+<span class="blue">### Persona 2: Rahul — Team Lead at a Startup</span><br/>
+- Goal: Assign and track tasks across a 5-person team<br/>
+- Pain point: No single view of who is doing what<br/><br/>
+<span class="purple">## complexity_score.json</span><br/>
+<span class="green">{ "score": "M", "reason": "Real-time sync + team features add complexity" }</span>
+            </div>
+
+            <div class="output-box">
+              <div class="output-label">✅ Agent #2 complete — outputs saved to conversation context</div>
+              <div class="output-chips">
+                <span class="output-chip">requirements.md</span>
+                <span class="output-chip">personas.md</span>
+                <span class="output-chip">complexity_score.json</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- USER TRIGGER NEXT AGENT -->
+        <div class="chat-turn" style="border-bottom:none; padding-bottom:0;">
+          <div class="chat-avatar" style="background:#e0e7ff; color:#3730a3;">👤</div>
+          <div class="chat-content">
+            <div class="chat-name" style="color:#3730a3;">You — triggering the next agent</div>
+            <div class="chat-text" style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#6d28d9; font-weight:700;">
+              RUN: ProjectManager
+            </div>
+            <div style="font-size:12px; color:#9ca3af; margin-top:5px;">
+              → Claude now reads skill_03_pm.md + requirements.md from above and creates epics, tasks, and sprint plan for the Todo App.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-row">
+    <div class="summary-item">
+      <div class="summary-n" style="color:#7c3aed;">1</div>
+      <div class="summary-l">Skill file you wrote</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-n" style="color:#059669;">1</div>
+      <div class="summary-l">Line you typed to run it</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-n" style="color:#0891b2;">3</div>
+      <div class="summary-l">Structured outputs Claude produced</div>
+    </div>
+  </div>
+
+  <!-- HIGHLIGHT -->
+  <div class="highlight">
+    💡 <strong>That's the entire pattern.</strong> You write the skill file once, upload it to Project Knowledge, then type <code style="background:white; padding:2px 7px; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:12px;">RUN: AgentName</code> to activate it. Claude reads the skill + all previous outputs in the conversation, then produces the next structured output. Repeat this 18 times and your full product is built.
+  </div>
+
+</div>
+</body>
+</html>

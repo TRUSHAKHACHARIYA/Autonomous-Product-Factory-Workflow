@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Claude Project + Skills — No-Code Agent Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f8f9fc;
+    color: #1a1d27;
+    min-height: 100vh;
+    padding: 36px 16px 72px;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .header { text-align: center; margin-bottom: 44px; }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #f0e6ff, #e6f0ff);
+    border: 1.5px solid #c4a8ff; border-radius: 50px;
+    padding: 7px 20px; margin-bottom: 18px;
+    font-size: 12px; font-weight: 800; color: #6b21a8;
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .header h1 {
+    font-size: 36px; font-weight: 900; color: #0f0a1e;
+    letter-spacing: -1px; line-height: 1.15; margin-bottom: 12px;
+  }
+  .header h1 span { color: #7c3aed; }
+  .header p { color: #6b7280; font-size: 15px; max-width: 580px; margin: 0 auto; line-height: 1.65; }
+
+  /* ── REALITY CHECK BOX ── */
+  .reality-box {
+    background: linear-gradient(135deg, #fef9c3, #fef3c7);
+    border: 1.5px solid #fde047; border-radius: 14px;
+    padding: 20px 24px; margin-bottom: 40px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .reality-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+  .reality-title { font-size: 14px; font-weight: 800; color: #78350f; margin-bottom: 6px; }
+  .reality-text { font-size: 13px; color: #92400e; line-height: 1.65; }
+  .reality-text strong { color: #78350f; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #9ca3af;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1.5px; background: #e5e7eb; }
+
+  /* ── BIG CONCEPT DIAGRAM ── */
+  .concept-card {
+    background: white; border: 1.5px solid #e5e7eb;
+    border-radius: 18px; padding: 28px 24px;
+    margin-bottom: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .concept-title { font-size: 17px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+  .concept-sub { font-size: 13px; color: #9ca3af; margin-bottom: 24px; }
+
+  /* PROJECT CONTAINER */
+  .project-container {
+    background: linear-gradient(135deg, #faf5ff, #f5f0ff);
+    border: 2px solid #a78bfa; border-radius: 16px;
+    padding: 0; overflow: hidden; position: relative;
+  }
+  .project-header {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    padding: 16px 22px; display: flex; align-items: center; gap: 12px;
+  }
+  .project-header-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .project-header-title { font-size: 16px; font-weight: 800; color: white; }
+  .project-header-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .project-body { padding: 20px 22px; }
+
+  /* SKILLS ROW */
+  .skills-title { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #7c3aed; margin-bottom: 12px; }
+  .skills-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .skill-pill {
+    background: white; border: 1.5px solid #ddd6fe;
+    border-radius: 8px; padding: 6px 12px;
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 700; color: #4c1d95;
+    box-shadow: 0 1px 3px rgba(109,40,217,0.08);
+  }
+  .skill-pill-icon { font-size: 14px; }
+
+  /* MEMORY / PROJECT INSTRUCTIONS */
+  .proj-instructions {
+    background: white; border: 1.5px solid #e0d7ff;
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+  }
+  .proj-inst-label { font-size: 10px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #8b5cf6; margin-bottom: 8px; }
+  .proj-inst-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .proj-inst-item {
+    background: #f5f0ff; border: 1px solid #ddd6fe;
+    border-radius: 6px; padding: 3px 9px;
+    font-size: 11.5px; color: #5b21b6;
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  }
+
+  /* CONVERSATION CHAIN */
+  .conv-chain { display: flex; flex-direction: column; gap: 0; }
+  .conv-label { font-size: 11px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #6b7280; margin-bottom: 10px; }
+
+  .conv-turn {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px dashed #e5e7eb; position: relative;
+  }
+  .conv-turn:last-child { border-bottom: none; }
+  .conv-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; font-weight: 800;
+  }
+  .conv-bubble { flex: 1; }
+  .conv-name { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+  .conv-text { font-size: 12.5px; color: #374151; line-height: 1.55; }
+  .conv-output {
+    margin-top: 6px; background: #f9fafb; border: 1px solid #e5e7eb;
+    border-radius: 7px; padding: 7px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #059669;
+  }
+
+  /* ── HOW SKILLS WORK ── */
+  .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 36px; }
+  .skill-card {
+    background: white; border: 1.5px solid #e5e7eb;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .skill-card-header {
+    padding: 14px 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .skill-card-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .skill-card-title { font-size: 13px; font-weight: 800; color: #111827; }
+  .skill-card-sub { font-size: 11px; margin-top: 1px; }
+  .skill-card-body { padding: 0 18px 16px; }
+  .skill-card-desc { font-size: 12.5px; color: #6b7280; line-height: 1.6; margin-bottom: 10px; }
+  .skill-card-format {
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #374151; line-height: 1.7;
+  }
+  .fmt-comment { color: #9ca3af; }
+  .fmt-key { color: #7c3aed; font-weight: 700; }
+  .fmt-val { color: #059669; }
+
+  /* ── FULL WORKFLOW ── */
+  .workflow-timeline { display: flex; flex-direction: column; gap: 0; }
+
+  .wf-phase {
+    display: flex; gap: 0; position: relative;
+  }
+  .wf-left {
+    width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+  }
+  .wf-num {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; flex-shrink: 0; z-index: 1; position: relative;
+  }
+  .wf-line { flex: 1; width: 2px; background: #e5e7eb; min-height: 20px; }
+  .wf-content { flex: 1; padding: 0 0 28px 16px; }
+
+  .wf-phase-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .wf-title { font-size: 15px; font-weight: 800; color: #111827; margin-bottom: 6px; }
+  .wf-desc { font-size: 13px; color: #6b7280; line-height: 1.6; margin-bottom: 10px; }
+
+  .wf-skill-used {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f5f0ff; border: 1px solid #ddd6fe;
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 11.5px; font-weight: 700; color: #6d28d9; margin-bottom: 10px;
+  }
+
+  .wf-prompt-box {
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 9px;
+    padding: 12px 14px; margin-bottom: 8px;
+  }
+  .wf-prompt-label { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px; }
+  .wf-prompt-text {
+    font-size: 12px; color: #374151; line-height: 1.6;
+    font-style: italic; border-left: 3px solid #a78bfa; padding-left: 10px;
+  }
+
+  .wf-output-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .wf-output-chip {
+    background: #f0fdf4; border: 1px solid #86efac;
+    border-radius: 6px; padding: 3px 10px;
+    font-size: 11px; font-weight: 700; color: #15803d;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .wf-parallel-banner {
+    background: #ecfdf5; border: 1.5px solid #6ee7b7;
+    border-radius: 8px; padding: 7px 14px; margin-bottom: 10px;
+    font-size: 11.5px; font-weight: 700; color: #065f46;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  .wf-loop-banner {
+    background: #fef2f2; border: 1.5px solid #fca5a5;
+    border-radius: 8px; padding: 7px 14px; margin-bottom: 10px;
+    font-size: 11.5px; font-weight: 700; color: #991b1b;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  /* ── LIMITATION BOX ── */
+  .limit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 36px; }
+  @media(max-width:560px) { .limit-grid { grid-template-columns: 1fr; } }
+
+  .limit-box {
+    background: white; border: 1.5px solid #e5e7eb;
+    border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .limit-box-title { font-size: 13px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .limit-item { display: flex; gap: 8px; margin-bottom: 9px; font-size: 12.5px; color: #374151; line-height: 1.5; align-items: flex-start; }
+  .limit-dot { flex-shrink: 0; margin-top: 5px; width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ── HOW TO STRUCTURE YOUR PROJECT ── */
+  .project-setup-card {
+    background: white; border: 1.5px solid #e5e7eb;
+    border-radius: 16px; overflow: hidden;
+    margin-bottom: 36px; box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .psc-header {
+    background: linear-gradient(135deg, #1e3a5f, #1a3350);
+    padding: 18px 24px; display: flex; align-items: center; gap: 12px;
+  }
+  .psc-title { font-size: 16px; font-weight: 800; color: white; }
+  .psc-sub { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+  .psc-body { padding: 24px; }
+
+  .psc-step { display: flex; gap: 14px; margin-bottom: 22px; align-items: flex-start; }
+  .psc-step-num {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900;
+  }
+  .psc-step-title { font-size: 13px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+  .psc-step-desc { font-size: 12.5px; color: #6b7280; line-height: 1.6; }
+  .psc-step-code {
+    margin-top: 8px; background: #0d1117; border-radius: 8px;
+    padding: 12px 14px; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #e6edf3; line-height: 1.8; overflow-x: auto;
+  }
+  .sc { color: #8b949e; }
+  .sk { color: #79c0ff; }
+  .sv { color: #a5d6ff; }
+  .sg { color: #7ee787; }
+
+  /* ── ONE BIG ANSWER BOX ── */
+  .answer-box {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 2px solid #86efac; border-radius: 14px;
+    padding: 22px 26px; margin-bottom: 36px;
+  }
+  .answer-box h2 { font-size: 16px; font-weight: 800; color: #14532d; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .answer-box p { font-size: 13.5px; color: #166534; line-height: 1.7; }
+  .answer-box strong { color: #14532d; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: #e5e7eb; margin: 36px 0; }
+
+  /* responsive */
+  @media(max-width:600px) {
+    .header h1 { font-size: 26px; }
+    .wf-content { padding-left: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">🧠 No-Code Architecture</div>
+    <h1>18-Agent Automation<br/>Using <span>Claude Project + Skills</span></h1>
+    <p>You define skills as documents inside a Claude Project. Claude reads them automatically on every message and acts as all 18 agents — no coding required.</p>
+  </div>
+
+  <!-- REALITY CHECK -->
+  <div class="reality-box">
+    <div class="reality-icon">⚡</div>
+    <div>
+      <div class="reality-title">Yes, this is possible — here's the honest picture</div>
+      <div class="reality-text">
+        You can build this <strong>100% inside Claude.ai</strong> using one Project with custom skills (uploaded as documents in Project Knowledge). Claude reads all skills on every turn and chains through all 18 agents in a single long conversation. <strong>No code, no API, no external tools.</strong> The trade-off: instead of automatic sequencing, you trigger the next agent by pasting a short prompt. Think of it as <strong>you being the orchestrator</strong>, but Claude doing all the real work.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 1: THE CORE CONCEPT -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section-label">The core concept — how it all fits together</div>
+
+  <div class="concept-card">
+    <div class="concept-title">How Your Claude Project Becomes the Entire Pipeline</div>
+    <div class="concept-sub">One Project = one long conversation. Skills = agent definitions. You type one line, Claude runs the next agent.</div>
+
+    <div class="project-container">
+      <div class="project-header">
+        <div class="project-header-icon">📁</div>
+        <div>
+          <div class="project-header-title">Your Claude Project — "Full-Stack Automation Pipeline"</div>
+          <div class="project-header-sub">Everything lives here: Project Instructions + 18 Skill Documents + conversation history</div>
+        </div>
+      </div>
+      <div class="project-body">
+
+        <!-- PROJECT INSTRUCTIONS -->
+        <div class="proj-instructions">
+          <div class="proj-inst-label">📌 Project Instructions (the master orchestrator prompt)</div>
+          <div style="font-size:12.5px; color:#374151; line-height:1.65; margin-bottom:10px; font-style:italic; border-left:3px solid #a78bfa; padding-left:10px;">
+            "You are a full-stack automation pipeline with 18 specialized agents. You have access to 18 skill documents — each defines one agent's role, inputs, outputs, and format. When I type <strong>RUN: [AgentName]</strong>, activate that agent's skill, read all previous outputs from this conversation, and execute that agent's full responsibilities. Always output structured results in the exact format defined in that agent's skill document. Store all outputs clearly labelled so future agents can reference them."
+          </div>
+          <div class="proj-inst-label" style="margin-top:8px;">📎 Project Knowledge (your 18 skill files)</div>
+          <div class="proj-inst-items">
+            <span class="proj-inst-item">skill_01_input.md</span>
+            <span class="proj-inst-item">skill_02_analyst.md</span>
+            <span class="proj-inst-item">skill_03_pm.md</span>
+            <span class="proj-inst-item">skill_04_architecture.md</span>
+            <span class="proj-inst-item">skill_05_security.md</span>
+            <span class="proj-inst-item">skill_06_design.md</span>
+            <span class="proj-inst-item">skill_07_fe_senior.md</span>
+            <span class="proj-inst-item">skill_08_fe_junior.md</span>
+            <span class="proj-inst-item">skill_09_fe_gate.md</span>
+            <span class="proj-inst-item">skill_10_be_senior.md</span>
+            <span class="proj-inst-item">skill_11_be_junior.md</span>
+            <span class="proj-inst-item">skill_12_be_gate.md</span>
+            <span class="proj-inst-item">skill_13_integration.md</span>
+            <span class="proj-inst-item">skill_14_qa.md</span>
+            <span class="proj-inst-item">skill_15_fix_loop.md</span>
+            <span class="proj-inst-item">skill_16_devops.md</span>
+            <span class="proj-inst-item">skill_17_docs.md</span>
+            <span class="proj-inst-item">skill_18_final.md</span>
+          </div>
+        </div>
+
+        <!-- CONVERSATION EXAMPLE -->
+        <div class="conv-label">💬 What the conversation looks like</div>
+        <div class="conv-chain">
+
+          <div class="conv-turn">
+            <div class="conv-avatar" style="background:#e0e7ff; color:#3730a3;">👤</div>
+            <div class="conv-bubble">
+              <div class="conv-name" style="color:#3730a3;">You</div>
+              <div class="conv-text">Build me a SaaS project management tool with payments, team collaboration, and notifications. RUN: InputLayer</div>
+            </div>
+          </div>
+
+          <div class="conv-turn">
+            <div class="conv-avatar" style="background:#f5f0ff; color:#6d28d9;">🤖</div>
+            <div class="conv-bubble">
+              <div class="conv-name" style="color:#6d28d9;">Claude (acting as Agent #1 — Input Layer)</div>
+              <div class="conv-text">Reading skill_01_input.md... Parsing your requirement. Validating all required fields...</div>
+              <div class="conv-output">✅ user_input.json saved<br/>platform: Web SaaS | features: payments, teams, notifications | complexity: L</div>
+            </div>
+          </div>
+
+          <div class="conv-turn">
+            <div class="conv-avatar" style="background:#e0e7ff; color:#3730a3;">👤</div>
+            <div class="conv-bubble">
+              <div class="conv-name" style="color:#3730a3;">You</div>
+              <div class="conv-text">RUN: RequirementAnalyst</div>
+            </div>
+          </div>
+
+          <div class="conv-turn">
+            <div class="conv-avatar" style="background:#f5f0ff; color:#6d28d9;">🤖</div>
+            <div class="conv-bubble">
+              <div class="conv-name" style="color:#6d28d9;">Claude (acting as Agent #2 — Requirement Analyst)</div>
+              <div class="conv-text">Reading skill_02_analyst.md + user_input.json from this conversation... Extracting FR, NFR, personas...</div>
+              <div class="conv-output">✅ requirements.md | ✅ personas.md | ✅ user_journeys.md | ✅ complexity_score.json</div>
+            </div>
+          </div>
+
+          <div class="conv-turn" style="border-bottom:none; opacity:0.6">
+            <div class="conv-avatar" style="background:#f3f4f6; color:#9ca3af;">👤</div>
+            <div class="conv-bubble">
+              <div class="conv-name" style="color:#9ca3af;">You</div>
+              <div class="conv-text">RUN: ProjectManager → RUN: Architecture → RUN: Security → ... (continues for all 18 agents)</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 2: WHAT A SKILL FILE LOOKS LIKE -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section-label">What each skill document looks like</div>
+
+  <div class="skills-grid">
+
+    <div class="skill-card">
+      <div class="skill-card-header" style="background:#f5f3ff">
+        <div class="skill-card-icon" style="background:#7c3aed">🔍</div>
+        <div>
+          <div class="skill-card-title">skill_02_analyst.md</div>
+          <div class="skill-card-sub" style="color:#7c3aed">Requirement Analyst Agent</div>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-card-desc">Tells Claude exactly what role to take, what to read from the conversation, what to output, and the exact format to use.</div>
+        <div class="skill-card-format">
+<span class="fmt-comment"># SKILL: Requirement Analyst Agent</span><br/>
+<span class="fmt-key">TRIGGER:</span> <span class="fmt-val">RUN: RequirementAnalyst</span><br/>
+<span class="fmt-key">ROLE:</span> Senior Business Analyst<br/><br/>
+<span class="fmt-key">READ FROM CONVERSATION:</span><br/>
+- user_input.json (from Agent #1)<br/><br/>
+<span class="fmt-key">YOUR JOB:</span><br/>
+- Extract all functional requirements<br/>
+- Extract non-functional requirements<br/>
+- Create user personas<br/>
+- Map user journeys<br/>
+- Score complexity (S/M/L/XL)<br/><br/>
+<span class="fmt-key">OUTPUT FORMAT:</span><br/>
+<span class="fmt-comment">## requirements.md</span><br/>
+[your structured output here]<br/><br/>
+<span class="fmt-comment">## personas.md</span><br/>
+[your structured output here]
+        </div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-card-header" style="background:#ecfdf5">
+        <div class="skill-card-icon" style="background:#059669">🏗️</div>
+        <div>
+          <div class="skill-card-title">skill_04_architecture.md</div>
+          <div class="skill-card-sub" style="color:#059669">Architecture Agent</div>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-card-desc">Architecture agent reads outputs from both PM and Requirement agents before making tech decisions.</div>
+        <div class="skill-card-format">
+<span class="fmt-comment"># SKILL: Architecture Agent</span><br/>
+<span class="fmt-key">TRIGGER:</span> <span class="fmt-val">RUN: Architecture</span><br/>
+<span class="fmt-key">ROLE:</span> Senior Software Architect<br/><br/>
+<span class="fmt-key">READ FROM CONVERSATION:</span><br/>
+- requirements.md (Agent #2)<br/>
+- epics.md + tasks.json (Agent #3)<br/>
+- complexity_score.json (Agent #2)<br/><br/>
+<span class="fmt-key">YOUR JOB:</span><br/>
+- Choose tech stack<br/>
+- Design DB schema<br/>
+- Define API contracts (OpenAPI)<br/>
+- Define folder structure<br/><br/>
+<span class="fmt-key">OUTPUT FORMAT:</span><br/>
+<span class="fmt-comment">## tech_stack.md</span><br/>
+<span class="fmt-comment">## database_schema.sql</span><br/>
+<span class="fmt-comment">## api_contracts.yaml</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-card-header" style="background:#fff7ed">
+        <div class="skill-card-icon" style="background:#c2410c">🧪</div>
+        <div>
+          <div class="skill-card-title">skill_14_qa.md</div>
+          <div class="skill-card-sub" style="color:#c2410c">QA Agent</div>
+        </div>
+      </div>
+      <div class="skill-card-body">
+        <div class="skill-card-desc">QA skill tells Claude to generate all 8 test types and output a structured bug report for the Fix Loop.</div>
+        <div class="skill-card-format">
+<span class="fmt-comment"># SKILL: QA Agent</span><br/>
+<span class="fmt-key">TRIGGER:</span> <span class="fmt-val">RUN: QA</span><br/>
+<span class="fmt-key">ROLE:</span> QA Lead Engineer<br/><br/>
+<span class="fmt-key">READ FROM CONVERSATION:</span><br/>
+- All generated code from FE/BE agents<br/>
+- acceptance_criteria.md (Agent #3)<br/>
+- api_contracts.yaml (Agent #4)<br/><br/>
+<span class="fmt-key">YOUR JOB:</span><br/>
+- Write unit tests for all modules<br/>
+- Write integration test scenarios<br/>
+- Write E2E test scripts<br/>
+- Run security audit checklist<br/><br/>
+<span class="fmt-key">OUTPUT FORMAT:</span><br/>
+<span class="fmt-comment">## bug_report.md</span><br/>
+[Critical / High / Medium / Low]<br/>
+<span class="fmt-comment">## fix_tasks.json</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 3: FULL WORKFLOW STEP BY STEP -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section-label">Full step-by-step workflow — all 18 agents</div>
+
+  <div class="concept-card">
+    <div class="concept-title">Complete Pipeline — What You Type vs What Claude Does</div>
+    <div class="concept-sub">You type one trigger per agent. Claude reads the relevant skill + all previous outputs, then executes.</div>
+
+    <div class="workflow-timeline">
+
+      <!-- PHASE 1 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#ede9fe; color:#6d28d9;">1</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#6d28d9;">Input Layer</div>
+          <div class="wf-title">You describe the project</div>
+          <div class="wf-skill-used">📄 skill_01_input.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">"Build me a SaaS tool for [description]. Target: web app. Stack: open to suggestions. RUN: InputLayer"</div>
+          </div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">Claude outputs:</div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">user_input.json</span>
+            <span class="wf-output-chip">validation_report.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 2 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#ede9fe; color:#7c3aed;">2</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#7c3aed;">Analysis</div>
+          <div class="wf-title">Requirement Analyst Agent</div>
+          <div class="wf-skill-used">📄 skill_02_analyst.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: RequirementAnalyst</div>
+          </div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">Claude reads user_input.json from above and outputs:</div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">requirements.md</span>
+            <span class="wf-output-chip">personas.md</span>
+            <span class="wf-output-chip">user_journeys.md</span>
+            <span class="wf-output-chip">complexity_score.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 3 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#ecfeff; color:#0891b2;">3</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#0891b2;">Planning</div>
+          <div class="wf-title">Project Manager Agent</div>
+          <div class="wf-skill-used">📄 skill_03_pm.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: ProjectManager</div>
+          </div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">Claude reads requirements.md and outputs:</div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">epics.md</span>
+            <span class="wf-output-chip">tasks.json</span>
+            <span class="wf-output-chip">sprint_plan.md</span>
+            <span class="wf-output-chip">mvp_scope.md</span>
+            <span class="wf-output-chip">timeline.md</span>
+            <span class="wf-output-chip">risk_register.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 4 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#ecfdf5; color:#059669;">4</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#059669;">Architecture</div>
+          <div class="wf-title">Architecture Agent</div>
+          <div class="wf-skill-used">📄 skill_04_architecture.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: Architecture</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">tech_stack.md</span>
+            <span class="wf-output-chip">system_architecture.md</span>
+            <span class="wf-output-chip">database_schema.sql</span>
+            <span class="wf-output-chip">api_contracts.yaml</span>
+            <span class="wf-output-chip">folder_structure.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 5 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#fef2f2; color:#dc2626;">5</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#dc2626;">Security</div>
+          <div class="wf-title">Security Agent</div>
+          <div class="wf-skill-used">📄 skill_05_security.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: Security</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">security_audit.md</span>
+            <span class="wf-output-chip">security_checklist.md</span>
+            <span class="wf-output-chip">secrets_management.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 6 -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#fdf2f8; color:#db2777;">6</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#db2777;">Design</div>
+          <div class="wf-title">Design Agent</div>
+          <div class="wf-skill-used">📄 skill_06_design.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: Design</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">design_system.md</span>
+            <span class="wf-output-chip">component_spec.md</span>
+            <span class="wf-output-chip">user_flows.md</span>
+            <span class="wf-output-chip">wireframes.md</span>
+            <span class="wf-output-chip">accessibility_guide.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 7 — FRONTEND SENIOR -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#eff6ff; color:#2563eb;">7</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#2563eb;">Frontend Lead</div>
+          <div class="wf-title">Frontend Senior Agent — Plans & Assigns</div>
+          <div class="wf-skill-used">📄 skill_07_fe_senior.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: FrontendSenior</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">fe_module_plan.md</span>
+            <span class="wf-output-chip">fe_component_contracts.md</span>
+            <span class="wf-output-chip">fe_boilerplate_setup.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 8 — PARALLEL FE JUNIORS -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#eff6ff; color:#2563eb;">8</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#2563eb;">Frontend — Parallel</div>
+          <div class="wf-title">All 4 Frontend Junior Agents</div>
+          <div class="wf-skill-used">📄 skill_08_fe_junior.md</div>
+          <div class="wf-parallel-banner">⚡ Claude runs all 4 sequentially in one response (simulated parallel)</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: FrontendJuniors — run all 4 modules simultaneously and output all code</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">auth_module/ (code)</span>
+            <span class="wf-output-chip">dashboard_module/ (code)</span>
+            <span class="wf-output-chip">admin_panel/ (code)</span>
+            <span class="wf-output-chip">shared_components/ (code)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 9 — FE GATE -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f5f3ff; color:#7c3aed;">9</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#7c3aed;">Gate</div>
+          <div class="wf-title">Frontend Code Review Gate</div>
+          <div class="wf-skill-used">📄 skill_09_fe_gate.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: FrontendGate</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">fe_review_report.md</span>
+            <span class="wf-output-chip">fe_fix_tasks.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 10 — BACKEND SENIOR -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f0fdfa; color:#0f766e;">10</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#0f766e;">Backend Lead</div>
+          <div class="wf-title">Backend Senior Agent — Plans & Assigns</div>
+          <div class="wf-skill-used">📄 skill_10_be_senior.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: BackendSenior</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">be_module_plan.md</span>
+            <span class="wf-output-chip">be_middleware_setup.md</span>
+            <span class="wf-output-chip">be_error_strategy.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 11 — PARALLEL BE JUNIORS -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f0fdfa; color:#0f766e;">11</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#0f766e;">Backend — Parallel</div>
+          <div class="wf-title">All 4 Backend Junior Agents</div>
+          <div class="wf-skill-used">📄 skill_11_be_junior.md</div>
+          <div class="wf-parallel-banner">⚡ Claude runs all 4 sequentially in one response (simulated parallel)</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: BackendJuniors — run all 4 service modules and output all code</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">auth_service/ (code)</span>
+            <span class="wf-output-chip">user_module/ (code)</span>
+            <span class="wf-output-chip">payments_module/ (code)</span>
+            <span class="wf-output-chip">notifications_module/ (code)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 12 — BE GATE -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f0fdfa; color:#0f766e;">12</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#0f766e;">Gate</div>
+          <div class="wf-title">Backend Code Review Gate</div>
+          <div class="wf-skill-used">📄 skill_12_be_gate.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: BackendGate</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">be_review_report.md</span>
+            <span class="wf-output-chip">be_fix_tasks.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 13 — INTEGRATION -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#fffbeb; color:#b45309;">13</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#b45309;">Integration</div>
+          <div class="wf-title">Integration Agent — Connect FE ↔ BE</div>
+          <div class="wf-skill-used">📄 skill_13_integration.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: Integration</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">integration_report.md</span>
+            <span class="wf-output-chip">env_configs.md</span>
+            <span class="wf-output-chip">connected_app_summary.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 14 — QA -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#fff7ed; color:#c2410c;">14</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#c2410c;">Quality</div>
+          <div class="wf-title">QA Agent — All 8 Test Types</div>
+          <div class="wf-skill-used">📄 skill_14_qa.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: QA</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">test_suite/ (all tests)</span>
+            <span class="wf-output-chip">bug_report.md</span>
+            <span class="wf-output-chip">coverage_report.md</span>
+            <span class="wf-output-chip">fix_tasks.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 15 — FIX LOOP -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#fef2f2; color:#b91c1c;">15</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#b91c1c;">Fix Loop</div>
+          <div class="wf-title">Fix Agent Loop — Bug → Fix → Retest</div>
+          <div class="wf-skill-used">📄 skill_15_fix_loop.md</div>
+          <div class="wf-loop-banner">🔁 Repeat this trigger until all Critical/High bugs resolved</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type (repeat until done)</div>
+            <div class="wf-prompt-text">RUN: FixLoop — fix all Critical and High bugs from bug_report.md, retest, repeat</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">fixed_code_patches.md</span>
+            <span class="wf-output-chip">retest_results.md</span>
+            <span class="wf-output-chip">resolved_bugs.json</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 16 — DEVOPS -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#eff6ff; color:#1d4ed8;">16</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#1d4ed8;">DevOps</div>
+          <div class="wf-title">DevOps Agent — Docker, CI/CD, Deploy</div>
+          <div class="wf-skill-used">📄 skill_16_devops.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: DevOps</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">Dockerfile</span>
+            <span class="wf-output-chip">docker-compose.yml</span>
+            <span class="wf-output-chip">ci_cd_pipeline.yml</span>
+            <span class="wf-output-chip">terraform/ (IaC)</span>
+            <span class="wf-output-chip">rollback_runbook.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 17 — DOCS -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f0f9ff; color:#0369a1;">17</div><div class="wf-line"></div></div>
+        <div class="wf-content">
+          <div class="wf-phase-label" style="color:#0369a1;">Documentation</div>
+          <div class="wf-title">Documentation Agent</div>
+          <div class="wf-skill-used">📄 skill_17_docs.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: Documentation</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">README.md</span>
+            <span class="wf-output-chip">docs/api/</span>
+            <span class="wf-output-chip">docs/architecture.md</span>
+            <span class="wf-output-chip">CHANGELOG.md</span>
+            <span class="wf-output-chip">docs/onboarding.md</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 18 — FINAL -->
+      <div class="wf-phase">
+        <div class="wf-left"><div class="wf-num" style="background:#f0fdf4; color:#15803d;">18</div></div>
+        <div class="wf-content" style="padding-bottom:0">
+          <div class="wf-phase-label" style="color:#15803d;">Delivered</div>
+          <div class="wf-title">Final Product Compilation</div>
+          <div class="wf-skill-used">📄 skill_18_final.md</div>
+          <div class="wf-prompt-box">
+            <div class="wf-prompt-label">You type</div>
+            <div class="wf-prompt-text">RUN: FinalProduct — compile everything into a complete delivery summary</div>
+          </div>
+          <div class="wf-output-row">
+            <span class="wf-output-chip">✅ Complete codebase</span>
+            <span class="wf-output-chip">✅ All tests passing</span>
+            <span class="wf-output-chip">✅ Full documentation</span>
+            <span class="wf-output-chip">✅ Deploy-ready</span>
+            <span class="wf-output-chip">✅ final_delivery.md</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 4: HOW TO SET UP YOUR PROJECT -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section-label">How to set up your Claude Project — step by step</div>
+
+  <div class="project-setup-card">
+    <div class="psc-header">
+      <div style="font-size:26px">🗂️</div>
+      <div>
+        <div class="psc-title">Setting Up Your Claude Project</div>
+        <div class="psc-sub">Do this once. Then use it for every project forever.</div>
+      </div>
+    </div>
+    <div class="psc-body">
+
+      <div class="psc-step">
+        <div class="psc-step-num" style="background:#ede9fe; color:#6d28d9;">1</div>
+        <div>
+          <div class="psc-step-title">Create a new Project in Claude.ai</div>
+          <div class="psc-step-desc">Go to Claude.ai → Projects → New Project. Name it "Full-Stack Automation Pipeline".</div>
+        </div>
+      </div>
+
+      <div class="psc-step">
+        <div class="psc-step-num" style="background:#ede9fe; color:#6d28d9;">2</div>
+        <div>
+          <div class="psc-step-title">Write the Master Project Instructions</div>
+          <div class="psc-step-desc">In Project Instructions, paste the orchestrator prompt that tells Claude it has 18 agents and how to activate each one via RUN: triggers.</div>
+          <div class="psc-step-code">
+<span class="sc"># Master Orchestrator — Project Instructions</span><br/><br/>
+You are a full-stack software development pipeline with 18 specialized agents.<br/>
+You have 18 skill documents in your knowledge base — each defines one agent.<br/><br/>
+<span class="sk">ACTIVATION RULE:</span> When I type <span class="sg">RUN: [AgentName]</span>, you must:<br/>
+1. Find and read the matching skill document for that agent<br/>
+2. Read ALL previous outputs from this conversation as your context<br/>
+3. Execute that agent's full responsibilities exactly as defined<br/>
+4. Output results in the exact format specified in the skill document<br/>
+5. Label every output clearly (e.g. <span class="sg">## requirements.md</span>) so future agents can find it<br/><br/>
+<span class="sk">CONTEXT RULE:</span> This entire conversation IS your shared context store.<br/>
+Every agent can see every previous agent's outputs. Never lose previous outputs.<br/><br/>
+<span class="sk">QUALITY RULE:</span> Never skip steps. Never abbreviate. Full professional output only.
+          </div>
+        </div>
+      </div>
+
+      <div class="psc-step">
+        <div class="psc-step-num" style="background:#ede9fe; color:#6d28d9;">3</div>
+        <div>
+          <div class="psc-step-title">Upload all 18 skill documents to Project Knowledge</div>
+          <div class="psc-step-desc">Create 18 markdown files — one per agent. Each file defines: the agent's role, what to read from conversation, responsibilities, and exact output format. Upload all to Project Knowledge.</div>
+        </div>
+      </div>
+
+      <div class="psc-step">
+        <div class="psc-step-num" style="background:#ede9fe; color:#6d28d9;">4</div>
+        <div>
+          <div class="psc-step-title">Start a new conversation inside the Project</div>
+          <div class="psc-step-desc">Every conversation inside this project automatically inherits all instructions and skill documents. Just describe your project and start triggering agents one by one.</div>
+        </div>
+      </div>
+
+      <div class="psc-step" style="margin-bottom:0">
+        <div class="psc-step-num" style="background:#dcfce7; color:#15803d;">5</div>
+        <div>
+          <div class="psc-step-title">Run the pipeline with simple triggers</div>
+          <div class="psc-step-desc">You are the trigger. Type RUN: [AgentName] to advance through each stage. Claude does all the work. The conversation history is your shared context store.</div>
+          <div class="psc-step-code">
+<span class="sc"># Example full pipeline run</span><br/>
+<span class="sg">RUN: InputLayer</span>        <span class="sc">→ validates your requirement</span><br/>
+<span class="sg">RUN: RequirementAnalyst</span> <span class="sc">→ extracts FR, NFR, personas</span><br/>
+<span class="sg">RUN: ProjectManager</span>    <span class="sc">→ creates epics, tasks, timeline</span><br/>
+<span class="sg">RUN: Architecture</span>      <span class="sc">→ tech stack, DB, API design</span><br/>
+<span class="sg">RUN: Security</span>          <span class="sc">→ OWASP audit, security checklist</span><br/>
+<span class="sg">RUN: Design</span>            <span class="sc">→ design system, wireframes</span><br/>
+<span class="sg">RUN: FrontendSenior</span>    <span class="sc">→ module planning</span><br/>
+<span class="sg">RUN: FrontendJuniors</span>   <span class="sc">→ all 4 modules code output</span><br/>
+<span class="sg">RUN: FrontendGate</span>      <span class="sc">→ code review pass/fail</span><br/>
+<span class="sg">RUN: BackendSenior</span>     <span class="sc">→ backend planning</span><br/>
+<span class="sg">RUN: BackendJuniors</span>    <span class="sc">→ all 4 services code output</span><br/>
+<span class="sg">RUN: BackendGate</span>       <span class="sc">→ backend review pass/fail</span><br/>
+<span class="sg">RUN: Integration</span>       <span class="sc">→ connects FE and BE</span><br/>
+<span class="sg">RUN: QA</span>               <span class="sc">→ all 8 test types</span><br/>
+<span class="sg">RUN: FixLoop</span>           <span class="sc">→ fix all critical bugs (repeat if needed)</span><br/>
+<span class="sg">RUN: DevOps</span>           <span class="sc">→ Docker, CI/CD, deploy config</span><br/>
+<span class="sg">RUN: Documentation</span>    <span class="sc">→ README, API docs, guides</span><br/>
+<span class="sg">RUN: FinalProduct</span>     <span class="sc">→ full delivery summary</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECTION 5: WHAT WORKS / WHAT DOESN'T -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section-label">What works perfectly vs real limitations</div>
+
+  <div class="limit-grid">
+    <div class="limit-box" style="border-color:#86efac">
+      <div class="limit-box-title" style="color:#15803d">✅ Works great</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>All planning, design, architecture — Claude excels here</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Generating complete code for all modules</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Writing all tests, docs, DevOps configs</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Skills (project knowledge) are read on every message</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Long conversation = persistent shared context</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Security audits, code reviews, bug analysis</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#22c55e"></div>Zero cost beyond Claude subscription</div>
+    </div>
+    <div class="limit-box" style="border-color:#fca5a5">
+      <div class="limit-box-title" style="color:#dc2626">⚠️ Real limitations</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>Context window limit — very long conversations may lose early outputs</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>Cannot actually execute code — only generates it</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>Cannot truly run tests — writes test code only</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>Parallel execution is simulated — Claude does 4 juniors one-by-one in same response</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>You still type each RUN: trigger — not fully automated</div>
+      <div class="limit-item"><div class="limit-dot" style="background:#ef4444"></div>Cannot deploy or push to GitHub — generates config only</div>
+    </div>
+  </div>
+
+  <!-- FINAL ANSWER -->
+  <div class="answer-box">
+    <h2>🎯 Bottom Line</h2>
+    <p>
+      <strong>Yes, you can build this entirely inside Claude.ai with no code.</strong> Create one Project, write 18 skill documents (one per agent), add a master orchestrator prompt as Project Instructions, then run each agent by typing <strong>RUN: AgentName</strong>. Claude reads all skills automatically and uses the conversation history as its shared memory. You get <strong>complete planning, architecture, code generation, tests, DevOps configs, and documentation</strong> — all without writing a single line of code yourself. The only thing you cannot do without code is <em>actually execute</em> what Claude generates.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

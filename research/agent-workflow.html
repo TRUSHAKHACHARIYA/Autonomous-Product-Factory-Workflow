@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Agent Pipeline — Full Automation Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f2f8;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 32px 16px 60px;
+    color: var(--text-primary);
+  }
+
+  .wrapper { max-width: 900px; margin: 0 auto; }
+
+  /* ── HEADER ── */
+  .header { text-align: center; margin-bottom: 40px; }
+  .header-chip {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 50px; padding: 8px 22px; margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .header-chip span { font-weight: 700; font-size: 13px; color: #1e293b; letter-spacing: 0.4px; }
+  .header h1 { font-size: 32px; font-weight: 900; color: var(--text-primary); margin-bottom: 8px; letter-spacing: -0.5px; }
+  .header p { color: var(--text-secondary); font-size: 14px; }
+  .header-stats {
+    display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 18px;
+  }
+  .stat-pill {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 50px; padding: 5px 14px; font-size: 12px;
+    font-weight: 600; color: var(--text-secondary); box-shadow: var(--shadow-sm);
+  }
+
+  /* ── SHARED CONTEXT ── */
+  .context-box {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 28px;
+    cursor: pointer; box-shadow: var(--shadow-sm); user-select: none;
+    transition: box-shadow 0.2s;
+  }
+  .context-box:hover { box-shadow: var(--shadow-md); }
+  .context-header { display: flex; align-items: center; justify-content: space-between; }
+  .context-left { display: flex; align-items: center; gap: 12px; }
+  .context-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .context-label { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+  .context-sublabel { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .context-toggle { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .context-files {
+    display: none; flex-wrap: wrap; gap: 7px; margin-top: 14px;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .context-files.open { display: flex; }
+  .context-file {
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; font-size: 11.5px; color: #475569;
+    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 28px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── CONNECTOR ── */
+  .connector { display: flex; justify-content: center; margin: 8px 0; }
+  .connector-inner { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .connector-line { width: 2px; height: 20px; background: #cbd5e1; }
+  .connector-arrow {
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid #cbd5e1;
+  }
+
+  /* ── HITL BANNER ── */
+  .hitl-banner {
+    display: flex; justify-content: center; margin-bottom: 6px;
+  }
+  .hitl-pill {
+    background: #fffbeb; border: 1.5px solid #fde047;
+    border-radius: 50px; padding: 5px 16px;
+    font-size: 11px; font-weight: 700; color: #854d0e;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 8px rgba(250,204,21,0.2);
+  }
+
+  /* ── AGENT CARD ── */
+  .agent-card {
+    background: var(--surface); border-radius: var(--radius-lg);
+    overflow: hidden; box-shadow: var(--shadow-md);
+    margin-bottom: 2px; transition: box-shadow 0.2s;
+    border: 1.5px solid var(--border);
+  }
+  .agent-card:hover { box-shadow: var(--shadow-lg); }
+
+  .agent-header {
+    padding: 15px 20px; cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: filter 0.15s;
+  }
+  .agent-header:hover { filter: brightness(0.97); }
+
+  .agent-left { display: flex; align-items: center; gap: 14px; }
+  .agent-icon-box {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .agent-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .agent-badge {
+    color: white; border-radius: 5px; padding: 2px 9px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+  }
+  .agent-num { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .agent-title { font-weight: 800; font-size: 15px; color: var(--text-primary); }
+  .agent-chevron { color: var(--text-muted); font-size: 13px; font-weight: 700; transition: transform 0.2s; }
+  .agent-chevron.open { transform: rotate(180deg); }
+
+  /* ── AGENT BODY ── */
+  .agent-body { display: none; padding: 18px 20px; border-top: 1px solid var(--border); }
+  .agent-body.open { display: block; }
+  .sections-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+
+  .section-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.7px; margin-bottom: 10px;
+  }
+  .section-list { list-style: none; }
+  .section-item {
+    display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px;
+  }
+  .section-arrow { font-size: 11px; margin-top: 3px; flex-shrink: 0; font-weight: 700; }
+  .section-text { font-size: 12.5px; color: #374151; line-height: 1.55; }
+
+  /* ── PARALLEL BANNER ── */
+  .parallel-wrap { margin-top: 12px; margin-bottom: 4px; }
+  .parallel-banner {
+    display: flex; justify-content: center; margin-bottom: 10px;
+  }
+  .parallel-pill {
+    background: #dcfce7; border: 1.5px solid #86efac;
+    border-radius: 50px; padding: 5px 16px;
+    font-size: 11px; font-weight: 700; color: #166534;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ── JUNIOR GRID ── */
+  .junior-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .junior-grid { grid-template-columns: 1fr; } }
+
+  .junior-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-md); overflow: hidden;
+    box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+  }
+  .junior-card:hover { box-shadow: var(--shadow-md); }
+
+  .junior-header {
+    padding: 11px 14px; cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #f8fafc;
+  }
+  .junior-left { display: flex; align-items: center; gap: 10px; }
+  .junior-icon { font-size: 20px; }
+  .junior-name { font-weight: 700; font-size: 12.5px; color: var(--text-primary); }
+  .junior-module { font-size: 11px; color: var(--text-muted); margin-top: 1px; font-weight: 500; }
+  .junior-chevron { color: var(--text-muted); font-size: 12px; font-weight: 700; transition: transform 0.2s; }
+  .junior-chevron.open { transform: rotate(180deg); }
+
+  .junior-body { display: none; padding: 10px 14px; border-top: 1px solid #f1f5f9; }
+  .junior-body.open { display: block; }
+  .task-item { display: flex; gap: 7px; align-items: flex-start; margin-bottom: 6px; }
+  .task-check { color: #22c55e; font-size: 11px; margin-top: 3px; flex-shrink: 0; }
+  .task-text { font-size: 12px; color: #374151; line-height: 1.45; }
+
+  /* ── GATE CARD (special style) ── */
+  .gate-card { border-left: 4px solid #7c3aed; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 40px; text-align: center;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .footer-title { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px; }
+  .footer-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+  .footer-stat-n { font-size: 28px; font-weight: 900; color: var(--text-primary); letter-spacing: -1px; }
+  .footer-stat-l { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+
+  /* ── PIPELINE FLOW LINE ── */
+  .pipeline-line {
+    position: relative;
+  }
+
+  /* ── EXPAND ALL BUTTON ── */
+  .expand-bar {
+    display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px;
+  }
+  .expand-btn {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 6px 14px; font-size: 12px;
+    font-weight: 600; color: var(--text-secondary); cursor: pointer;
+    transition: all 0.15s; font-family: 'Inter', sans-serif;
+  }
+  .expand-btn:hover { background: #f1f5f9; color: var(--text-primary); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-chip">
+      <span style="font-size:22px">🤖</span>
+      <span>AI Agent Pipeline</span>
+    </div>
+    <h1>Full Automation Workflow</h1>
+    <p>From user requirement to deployed product — fully automated with human checkpoints</p>
+    <div class="header-stats">
+      <span class="stat-pill">18 Agents</span>
+      <span class="stat-pill">4 HITL Checkpoints</span>
+      <span class="stat-pill">Parallel Execution</span>
+      <span class="stat-pill">Fix Loop</span>
+      <span class="stat-pill">Full DevOps</span>
+      <span class="stat-pill">Shared Context Store</span>
+    </div>
+  </div>
+
+  <!-- SHARED CONTEXT -->
+  <div class="context-box" onclick="toggleContext()">
+    <div class="context-header">
+      <div class="context-left">
+        <div class="context-icon">🗄️</div>
+        <div>
+          <div class="context-label">Shared Context Store</div>
+          <div class="context-sublabel">All agents read/write to a central memory layer — single source of truth</div>
+        </div>
+      </div>
+      <span class="context-toggle" id="ctx-toggle">▼ Show files</span>
+    </div>
+    <div class="context-files" id="ctx-files">
+      <span class="context-file">requirements.md</span>
+      <span class="context-file">personas.md</span>
+      <span class="context-file">user_journeys.md</span>
+      <span class="context-file">complexity_score.json</span>
+      <span class="context-file">epics.md</span>
+      <span class="context-file">tasks.json</span>
+      <span class="context-file">sprint_plan.md</span>
+      <span class="context-file">mvp_scope.md</span>
+      <span class="context-file">timeline.md</span>
+      <span class="context-file">risk_register.md</span>
+      <span class="context-file">tech_stack.md</span>
+      <span class="context-file">system_architecture.md</span>
+      <span class="context-file">database_schema.sql</span>
+      <span class="context-file">api_contracts.yaml</span>
+      <span class="context-file">folder_structure.md</span>
+      <span class="context-file">auth_strategy.md</span>
+      <span class="context-file">security_checklist.md</span>
+      <span class="context-file">design_system.md</span>
+      <span class="context-file">component_spec.md</span>
+      <span class="context-file">user_flows.md</span>
+      <span class="context-file">bug_report.md</span>
+      <span class="context-file">fix_tasks.json</span>
+      <span class="context-file">progress_state.json</span>
+      <span class="context-file">test_results.json</span>
+      <span class="context-file">pipeline_cost_report.md</span>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>HITL Checkpoint</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Parallel Execution</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Loop / Retry</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Gate / Review</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>DevOps / Infra</div>
+  </div>
+
+  <!-- EXPAND ALL -->
+  <div class="expand-bar">
+    <button class="expand-btn" onclick="expandAll()">Expand All</button>
+    <button class="expand-btn" onclick="collapseAll()">Collapse All</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 1 — USER INPUT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#c7d2fe">
+    <div class="agent-header" style="background:#eef2ff" onclick="toggle('a1')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#6366f1">👤</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#6366f1">ENTRY</span>
+            <span class="agent-num">Agent #1</span>
+          </div>
+          <div class="agent-title">User Input Layer</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a1">▼</span>
+    </div>
+    <div class="agent-body" id="body-a1">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#6366f1">Inputs Accepted</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Natural language project description</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Uploaded documents (PRD, specs, wireframes)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Tech preferences / constraints</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Budget & timeline constraints</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Target platform (Web / Mobile / API)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#6366f1">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Structured <code>user_input.json</code> passed to next agent</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Raw documents stored to shared context</span></li>
+          </ul>
+          <div class="section-title" style="color:#6366f1; margin-top:14px">Validation</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Check for minimum viable description</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#6366f1">→</span><span class="section-text">Prompt user for missing critical info</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 2 — REQUIREMENT ANALYST -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#ddd6fe">
+    <div class="agent-header" style="background:#f5f3ff" onclick="toggle('a2')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#8b5cf6">🔍</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#8b5cf6">ANALYSIS</span>
+            <span class="agent-num">Agent #2</span>
+          </div>
+          <div class="agent-title">Requirement Analyst Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a2">▼</span>
+    </div>
+    <div class="agent-body" id="body-a2">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#8b5cf6">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Parse & understand user's raw requirement</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Identify functional requirements (FR)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Identify non-functional requirements (NFR)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Detect ambiguities → generate clarifying questions</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Classify requirement complexity (S/M/L/XL)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Identify stakeholders & user personas</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Map out key user journeys</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#8b5cf6">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">requirements.md (FR + NFR)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">personas.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">user_journeys.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">ambiguities.md (auto-resolved or flagged)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">complexity_score.json</span></li>
+          </ul>
+          <div class="section-title" style="color:#8b5cf6; margin-top:14px">Tools Used</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">LLM reasoning</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Document parser (if files uploaded)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#8b5cf6">→</span><span class="section-text">Clarification loop (back to user if needed)</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 3 — PROJECT MANAGER (HITL) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="hitl-banner">
+    <div class="hitl-pill">👁️ HUMAN CHECKPOINT #1 — Approve Epic scope, timeline & MVP definition before proceeding</div>
+  </div>
+  <div class="agent-card" style="border-color:#a5f3fc">
+    <div class="agent-header" style="background:#ecfeff" onclick="toggle('a3')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#0891b2">📋</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#0891b2">PLANNING</span>
+            <span class="agent-num">Agent #3</span>
+          </div>
+          <div class="agent-title">Project Manager Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a3">▼</span>
+    </div>
+    <div class="agent-body" id="body-a3">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#0891b2">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Create Epics from requirements</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Break Epics → User Stories → Tasks → Subtasks</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Assign story points / effort estimation</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Build project timeline with milestones</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Define acceptance criteria per task</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Identify dependencies between tasks</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Define MVP vs V2 scope</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Create risk register</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">Output structured sprint plan</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#0891b2">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">epics.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">tasks.json (with story points)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">timeline.md (Gantt-style)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">acceptance_criteria.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">dependencies_graph.json</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">risk_register.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">sprint_plan.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0891b2">→</span><span class="section-text">mvp_scope.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 4 — ARCHITECTURE (HITL) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="hitl-banner">
+    <div class="hitl-pill">👁️ HUMAN CHECKPOINT #2 — Approve tech stack & system architecture before any code begins</div>
+  </div>
+  <div class="agent-card" style="border-color:#a7f3d0">
+    <div class="agent-header" style="background:#ecfdf5" onclick="toggle('a4')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#059669">🏗️</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#059669">ARCHITECTURE</span>
+            <span class="agent-num">Agent #4</span>
+          </div>
+          <div class="agent-title">Architecture Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a4">▼</span>
+    </div>
+    <div class="agent-body" id="body-a4">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#059669">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Choose tech stack (Frontend / Backend / DB / Infra)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Design system architecture (Monolith / Microservices / Serverless)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Design database schema (ER diagrams)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define API contracts (REST / GraphQL / gRPC)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define folder structure for frontend & backend</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define authentication strategy (JWT / OAuth / SSO)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define caching strategy (Redis / CDN)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define external integrations & third-party services</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Design event/messaging architecture (Kafka, queues)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">Define environment setup (Dev / Staging / Prod)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#059669">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">tech_stack.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">system_architecture.md + diagram</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">database_schema.sql / schema.prisma</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">api_contracts.yaml (OpenAPI spec)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">folder_structure.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">auth_strategy.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">integrations.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#059669">→</span><span class="section-text">environment_config.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 5 — SECURITY -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#fecaca">
+    <div class="agent-header" style="background:#fef2f2" onclick="toggle('a5')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#dc2626">🔒</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#dc2626">SECURITY</span>
+            <span class="agent-num">Agent #5</span>
+          </div>
+          <div class="agent-title">Security Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a5">▼</span>
+    </div>
+    <div class="agent-body" id="body-a5">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#dc2626">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">OWASP Top 10 review on architecture</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Authentication & authorization audit</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Data encryption requirements (at-rest & in-transit)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Input validation & sanitization rules</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Secrets management strategy (Vault, env vars)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Rate limiting & DDoS protection plan</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">GDPR / compliance requirements check</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Dependency vulnerability pre-scan</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Define security coding standards for all dev agents</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Create security checklist used by all agents</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#dc2626">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">security_audit.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">security_checklist.md (shared with all dev agents)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">compliance_requirements.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">secrets_management.md</span></li>
+          </ul>
+          <div class="section-title" style="color:#dc2626; margin-top:14px">Why Early?</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Security baked in from day 1, not bolted on after</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">All junior agents receive security rules before writing code</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#dc2626">→</span><span class="section-text">Prevents costly rework post-development</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 6 — DESIGN (HITL) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="hitl-banner">
+    <div class="hitl-pill">👁️ HUMAN CHECKPOINT #3 — Approve design system & UI mockups before frontend development starts</div>
+  </div>
+  <div class="agent-card" style="border-color:#fbcfe8">
+    <div class="agent-header" style="background:#fdf2f8" onclick="toggle('a6')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#db2777">🎨</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#db2777">DESIGN</span>
+            <span class="agent-num">Agent #6</span>
+          </div>
+          <div class="agent-title">Design Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a6">▼</span>
+    </div>
+    <div class="agent-body" id="body-a6">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#db2777">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Define Design System (colors, typography, spacing, icons)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Create component library specification</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Design user flows (all screens mapped)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Create low-fidelity wireframes (all pages)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Create high-fidelity UI mockups</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Define responsive breakpoints (Mobile / Tablet / Desktop)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Define interaction patterns & micro-animations</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Create accessibility guidelines (WCAG 2.1 AA)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Design empty states, error states, loading states</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">Define dark mode support (if required)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#db2777">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">design_system.md (tokens: colors, fonts, spacing)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">component_spec.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">user_flows.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">wireframes/ (per page)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">ui_mockups/ (per page, hi-fi)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#db2777">→</span><span class="section-text">accessibility_guide.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 7 — FRONTEND SENIOR + JUNIORS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#bfdbfe">
+    <div class="agent-header" style="background:#eff6ff" onclick="toggle('a7')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#2563eb">💻</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#2563eb">FRONTEND LEAD</span>
+            <span class="agent-num">Agent #7</span>
+          </div>
+          <div class="agent-title">Frontend Senior Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a7">▼</span>
+    </div>
+    <div class="agent-body" id="body-a7">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#2563eb">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Read architecture, design system & all contracts</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Plan module breakdown from task list</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Assign modules to Frontend Junior agents</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Define shared component contracts</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Set up project boilerplate & config (ESLint, Prettier, Husky)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Define state management strategy (Redux/Zustand/Context)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Define routing structure</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Review all Junior code before merge</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Resolve merge conflicts</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Ensure design system compliance across all modules</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#2563eb">Manages</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Frontend Junior 1 → Auth Module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Frontend Junior 2 → Dashboard Module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Frontend Junior 3 → Admin Panel</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Frontend Junior 4 → Shared Components</span></li>
+          </ul>
+          <div class="section-title" style="color:#2563eb; margin-top:14px">Boilerplate Setup</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Vite / Next.js / CRA project init</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">TypeScript config, path aliases</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Tailwind / CSS Modules / Styled Components setup</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#2563eb">→</span><span class="section-text">Git hooks (lint-staged, commit-msg)</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARALLEL JUNIOR AGENTS — FRONTEND -->
+  <div class="parallel-wrap">
+    <div class="parallel-banner">
+      <div class="parallel-pill">⚡ PARALLEL EXECUTION — All 4 Frontend Juniors work simultaneously</div>
+    </div>
+    <div class="junior-grid">
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('fj1')">
+          <div class="junior-left">
+            <span class="junior-icon">🔐</span>
+            <div><div class="junior-name">Frontend Junior 1</div><div class="junior-module">Auth Module</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-fj1">▼</span>
+        </div>
+        <div class="junior-body" id="body-fj1">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Login page</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Register page</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Forgot password flow</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">OAuth buttons (Google, GitHub)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Auth context/hooks</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Protected route HOC</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Token storage & refresh logic</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Form validation (Zod/Yup)</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('fj2')">
+          <div class="junior-left">
+            <span class="junior-icon">📊</span>
+            <div><div class="junior-name">Frontend Junior 2</div><div class="junior-module">Dashboard Module</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-fj2">▼</span>
+        </div>
+        <div class="junior-body" id="body-fj2">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Main dashboard layout</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Analytics widgets</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Charts & graphs (Recharts/D3)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Notification center</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">User profile section</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Quick actions panel</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Data tables with pagination</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Search & filter UI</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('fj3')">
+          <div class="junior-left">
+            <span class="junior-icon">⚙️</span>
+            <div><div class="junior-name">Frontend Junior 3</div><div class="junior-module">Admin Panel</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-fj3">▼</span>
+        </div>
+        <div class="junior-body" id="body-fj3">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Admin layout & sidebar</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">User management table</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Role & permissions UI</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Settings pages</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Audit logs view</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">System configuration UI</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Reports & CSV export</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">CMS/content management</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('fj4')">
+          <div class="junior-left">
+            <span class="junior-icon">🧩</span>
+            <div><div class="junior-name">Frontend Junior 4</div><div class="junior-module">Shared Components</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-fj4">▼</span>
+        </div>
+        <div class="junior-body" id="body-fj4">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Button, Input, Select, Checkbox</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Modal, Drawer, Toast system</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Table, Pagination, Sorting</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Form builder components</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Loading skeletons</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Error boundary components</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Layout components (Grid, Flex)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Icon system & theme provider</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 8 — FRONTEND CODE REVIEW GATE -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card gate-card" style="border-color:#ddd6fe">
+    <div class="agent-header" style="background:#f5f3ff" onclick="toggle('a8')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#7c3aed">⚡</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#7c3aed">GATE</span>
+            <span class="agent-num">Agent #8</span>
+          </div>
+          <div class="agent-title">Frontend Code Review Gate</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a8">▼</span>
+    </div>
+    <div class="agent-body" id="body-a8">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#7c3aed">Checks Performed by Senior Agent</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Design system compliance (colors, spacing, fonts match spec)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Component reusability & prop API consistency</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Accessibility (ARIA labels, keyboard nav, contrast ratios)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">State management correctness</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">API integration contract adherence</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">No hardcoded values / magic strings</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Error & loading states handled for all async ops</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Responsive layout verified (mobile/tablet/desktop)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">No console errors or warnings</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Unit tests present & passing</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#7c3aed">Outcomes</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#22c55e">→</span><span class="section-text">✅ Pass → Merge to main frontend branch</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#ef4444">→</span><span class="section-text">❌ Fail → Return to Junior with specific fix tasks</span></li>
+          </ul>
+          <div class="section-title" style="color:#7c3aed; margin-top:14px">Merge Strategy</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Feature branch per module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Squash merge to keep history clean</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Conflict resolution by Senior Agent</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 9 — BACKEND SENIOR + JUNIORS -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#99f6e4">
+    <div class="agent-header" style="background:#f0fdfa" onclick="toggle('a9')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#0f766e">🖥️</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#0f766e">BACKEND LEAD</span>
+            <span class="agent-num">Agent #9</span>
+          </div>
+          <div class="agent-title">Backend Senior Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a9">▼</span>
+    </div>
+    <div class="agent-body" id="body-a9">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#0f766e">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Read architecture docs & API contracts</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Set up project structure & boilerplate</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Define error handling strategy (global handlers)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Define logging & monitoring strategy</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Define middleware chain (auth, rate limit, CORS)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Assign modules to Backend Junior agents</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Review all Junior code before merge</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Ensure API contracts are strictly followed</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Database migration management</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Performance review (N+1 queries, indexing)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#0f766e">Manages</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Backend Junior 1 → Authentication Service</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Backend Junior 2 → User Module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Backend Junior 3 → Payments Module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Backend Junior 4 → Notifications Module</span></li>
+          </ul>
+          <div class="section-title" style="color:#0f766e; margin-top:14px">Boilerplate Setup</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Express / Fastify / NestJS project init</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">ORM setup (Prisma / TypeORM / Drizzle)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Winston/Pino logger, request ID middleware</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Global error handler + validation middleware</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARALLEL JUNIOR AGENTS — BACKEND -->
+  <div class="parallel-wrap">
+    <div class="parallel-banner">
+      <div class="parallel-pill">⚡ PARALLEL EXECUTION — All 4 Backend Juniors work simultaneously</div>
+    </div>
+    <div class="junior-grid">
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('bj1')">
+          <div class="junior-left">
+            <span class="junior-icon">🔑</span>
+            <div><div class="junior-name">Backend Junior 1</div><div class="junior-module">Authentication Service</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-bj1">▼</span>
+        </div>
+        <div class="junior-body" id="body-bj1">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Register / Login / Logout endpoints</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">JWT issue & refresh logic</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">OAuth2 integration (Google, GitHub)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Password hashing (bcrypt/argon2)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Email verification flow</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Rate limiting on auth routes</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Session management</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">2FA implementation (TOTP)</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('bj2')">
+          <div class="junior-left">
+            <span class="junior-icon">👥</span>
+            <div><div class="junior-name">Backend Junior 2</div><div class="junior-module">User Module</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-bj2">▼</span>
+        </div>
+        <div class="junior-body" id="body-bj2">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">User CRUD endpoints</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Profile management API</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Role & permissions system (RBAC)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">User preferences API</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Avatar upload (S3/Cloudinary)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Account deletion flow (GDPR)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">User search & filtering</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Admin user management APIs</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('bj3')">
+          <div class="junior-left">
+            <span class="junior-icon">💳</span>
+            <div><div class="junior-name">Backend Junior 3</div><div class="junior-module">Payments Module</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-bj3">▼</span>
+        </div>
+        <div class="junior-body" id="body-bj3">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Stripe/Razorpay integration</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Subscription management (plans, tiers)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Invoice generation (PDF)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Webhook handling & signature verification</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Payment history API</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Refund flow</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Tax calculation (Stripe Tax)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Payment failure recovery & retries</span></div>
+        </div>
+      </div>
+
+      <div class="junior-card">
+        <div class="junior-header" onclick="toggleJr('bj4')">
+          <div class="junior-left">
+            <span class="junior-icon">🔔</span>
+            <div><div class="junior-name">Backend Junior 4</div><div class="junior-module">Notifications Module</div></div>
+          </div>
+          <span class="junior-chevron" id="chev-bj4">▼</span>
+        </div>
+        <div class="junior-body" id="body-bj4">
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Email notifications (SendGrid/SES)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Push notifications (FCM/APNs)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">In-app notification system</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">SMS notifications (Twilio)</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Notification preferences API</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Notification templates engine</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Bulk notification system</span></div>
+          <div class="task-item"><span class="task-check">✓</span><span class="task-text">Notification read/unread tracking</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 10 — BACKEND CODE REVIEW GATE -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card gate-card" style="border-color:#99f6e4">
+    <div class="agent-header" style="background:#f0fdfa" onclick="toggle('a10')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#0f766e">🖥️</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#0f766e">GATE</span>
+            <span class="agent-num">Agent #10</span>
+          </div>
+          <div class="agent-title">Backend Code Review Gate</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a10">▼</span>
+    </div>
+    <div class="agent-body" id="body-a10">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#0f766e">Checks Performed by Senior Agent</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">API contract compliance (response shapes match OpenAPI spec)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Authentication & authorization on all protected routes</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Input validation & sanitization on all endpoints</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">SQL injection / NoSQL injection prevention</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Error handling & proper HTTP status codes</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Database query optimization (no N+1, proper indexes)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Logging & audit trails present on sensitive ops</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Unit & integration tests present & passing</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">No secrets or credentials in code</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0f766e">→</span><span class="section-text">Rate limiting applied where needed</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#0f766e">Outcomes</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#22c55e">→</span><span class="section-text">✅ Pass → Merge to main backend branch</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#ef4444">→</span><span class="section-text">❌ Fail → Return to Junior with specific fix tasks</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 11 — INTEGRATION AGENT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#fde68a">
+    <div class="agent-header" style="background:#fffbeb" onclick="toggle('a11')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#b45309">🔗</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#b45309">INTEGRATION</span>
+            <span class="agent-num">Agent #11</span>
+          </div>
+          <div class="agent-title">Integration Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a11">▼</span>
+    </div>
+    <div class="agent-body" id="body-a11">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#b45309">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Connect frontend & backend (wire up all API calls)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Verify API contract adherence (request/response shapes)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Handle CORS, auth headers, interceptors</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Set up environment configs (.env for dev/staging/prod)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Mock server teardown (remove any mock/stub data)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">End-to-end data flow verification</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">WebSocket / real-time connection setup</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Third-party SDK integrations (analytics, monitoring)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#b45309">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">integration_report.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">env_configs/ (dev, staging, prod)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b45309">→</span><span class="section-text">Fully connected & runnable application</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 12 — QA AGENT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#fed7aa">
+    <div class="agent-header" style="background:#fff7ed" onclick="toggle('a12')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#c2410c">🧪</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#c2410c">QUALITY</span>
+            <span class="agent-num">Agent #12</span>
+          </div>
+          <div class="agent-title">QA Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a12">▼</span>
+    </div>
+    <div class="agent-body" id="body-a12">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#c2410c">Sub-Agents / Test Types</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">🧩 Unit Test Agent → All functions, components, utils</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">🔗 Integration Test Agent → API ↔ DB, service ↔ service</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">🌐 E2E Test Agent → Playwright / Cypress full user flows</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">⚡ Performance Test Agent → Lighthouse, k6 load testing</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">♿ Accessibility Test Agent → axe-core, WCAG 2.1 AA</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">🔒 Security Test Agent → SAST scan, dependency audit</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">📱 Cross-browser / Device Test Agent</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">📝 Regression Test Agent → All previous bugs re-checked</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#c2410c">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">test_results.json (pass/fail per test)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">coverage_report.html (target ≥ 80%)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">bug_report.md (detailed per bug with severity)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">performance_report.md (Lighthouse scores)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">accessibility_report.md (WCAG violations)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#c2410c">→</span><span class="section-text">fix_tasks.json (assigned back to Fix Agent)</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 13 — FIX AGENT LOOP (HITL for blockers) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="hitl-banner">
+    <div class="hitl-pill">👁️ HUMAN CHECKPOINT — Blocker/critical unfixable bugs escalate to human. Pipeline pauses.</div>
+  </div>
+  <div class="agent-card" style="border-color:#fecaca">
+    <div class="agent-header" style="background:#fef2f2" onclick="toggle('a13')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#b91c1c">🔁</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#b91c1c">LOOP</span>
+            <span class="agent-num">Agent #13</span>
+          </div>
+          <div class="agent-title">Fix Agent Loop</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a13">▼</span>
+    </div>
+    <div class="agent-body" id="body-a13">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#b91c1c">Loop Logic</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Receive bug_report.json from QA Agent</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Classify bug: Critical / High / Medium / Low</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Assign bug to correct Junior agent by module</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Junior agent implements fix</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Senior agent reviews the fix</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">QA Agent retests specific bug</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">If pass → mark resolved, continue loop</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">If fail → retry (max 3 attempts per bug)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">3rd attempt fails → Escalate to Senior Agent</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Senior cannot fix → HITL escalation to human</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#b91c1c">Exit Conditions</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#22c55e">→</span><span class="section-text">✅ All Critical & High bugs resolved</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#f59e0b">→</span><span class="section-text">⚠️ Remaining bugs are Medium/Low → log to backlog</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#ef4444">→</span><span class="section-text">🚨 Blocker bugs → human notified, pipeline paused</span></li>
+          </ul>
+          <div class="section-title" style="color:#b91c1c; margin-top:14px">Retry Rules</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Max 3 attempts per bug at Junior level</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Each retry adds specific context from last failure</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#b91c1c">→</span><span class="section-text">Medium/Low bugs: 1 attempt, then backlog</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 14 — FINAL QA SIGN-OFF (HITL) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="hitl-banner">
+    <div class="hitl-pill">👁️ HUMAN CHECKPOINT #4 — Final product walkthrough & sign-off before deployment</div>
+  </div>
+  <div class="agent-card" style="border-color:#bbf7d0">
+    <div class="agent-header" style="background:#f0fdf4" onclick="toggle('a14')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#15803d">✅</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#15803d">APPROVAL</span>
+            <span class="agent-num">Agent #14</span>
+          </div>
+          <div class="agent-title">Final QA Sign-off</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a14">▼</span>
+    </div>
+    <div class="agent-body" id="body-a14">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#15803d">Automated Checks</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">All critical & high bugs resolved</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Test coverage ≥ 80% across all modules</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Performance scores acceptable (Lighthouse ≥ 80)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">No known security vulnerabilities (0 critical CVEs)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Accessibility score passing (WCAG 2.1 AA)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">All acceptance criteria from PM Agent met</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#15803d">Human Sign-off Steps</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Human walks through all user flows</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Verify UI matches approved designs</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Test on real devices (mobile, tablet)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Approve → pipeline proceeds to DevOps</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">Reject → specific fixes assigned, loop back</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 15 — DEVOPS AGENT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#bfdbfe">
+    <div class="agent-header" style="background:#eff6ff" onclick="toggle('a15')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#1d4ed8">🚀</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#1d4ed8">DEVOPS</span>
+            <span class="agent-num">Agent #15</span>
+          </div>
+          <div class="agent-title">DevOps Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a15">▼</span>
+    </div>
+    <div class="agent-body" id="body-a15">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#1d4ed8">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Write Dockerfiles (frontend + backend + services)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Write docker-compose.yml for local dev</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up CI/CD pipeline (GitHub Actions / GitLab CI)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">CI Pipeline: lint → test → build → security scan → deploy</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up Infrastructure as Code (Terraform / Pulumi)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Configure cloud provider (AWS / GCP / Azure / Vercel)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up reverse proxy & load balancer (Nginx / ALB)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Configure environment variables securely (Vault / Secrets Manager)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up auto-scaling policies</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Configure health checks & readiness probes</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up monitoring & alerting (Grafana, Prometheus)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Set up log aggregation (ELK / Loki)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Configure backup & disaster recovery</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Define rollback strategy & blue-green deployment</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#1d4ed8">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Dockerfile(s) per service</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">docker-compose.yml</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">.github/workflows/ (CI/CD pipelines)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">infrastructure/ (Terraform/Pulumi files)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">Deployed & live application URLs</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">monitoring_setup.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#1d4ed8">→</span><span class="section-text">rollback_runbook.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 16 — OBSERVABILITY AGENT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#ddd6fe">
+    <div class="agent-header" style="background:#f5f3ff" onclick="toggle('a16')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#7c3aed">📊</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#7c3aed">MONITORING</span>
+            <span class="agent-num">Agent #16</span>
+          </div>
+          <div class="agent-title">Observability Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a16">▼</span>
+    </div>
+    <div class="agent-body" id="body-a16">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#7c3aed">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Set up application performance monitoring (APM)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Configure error tracking (Sentry / Datadog)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Set up uptime monitoring (Pingdom / Better Uptime)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Create dashboard (request rates, error rates, latency)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Set up alerting rules (PagerDuty / Slack alerts)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Configure distributed tracing (OpenTelemetry)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Track pipeline-level metrics (token usage, agent cost, duration)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">Post-deployment smoke tests</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#7c3aed">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">monitoring_dashboard URL</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">alert_rules.yaml</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">post_deploy_smoke_test_results.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#7c3aed">→</span><span class="section-text">pipeline_cost_report.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 17 — DOCUMENTATION AGENT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#bae6fd">
+    <div class="agent-header" style="background:#f0f9ff" onclick="toggle('a17')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background:#0369a1">📚</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#0369a1">DOCS</span>
+            <span class="agent-num">Agent #17</span>
+          </div>
+          <div class="agent-title">Documentation Agent</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a17">▼</span>
+    </div>
+    <div class="agent-body" id="body-a17">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#0369a1">Responsibilities</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write README.md (setup, run, deploy instructions)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Generate API documentation (from OpenAPI spec)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write Architecture documentation</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write Frontend component documentation (Storybook-ready)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write database schema documentation</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write DevOps & deployment runbook</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write user guide / product manual</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write developer onboarding guide</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write changelog (all versions & changes)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">Write contributing guide (for open-source)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="section-title" style="color:#0369a1">Outputs</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">README.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/api/ (Swagger / Redoc)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/architecture.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/components.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/database.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/deployment_runbook.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/user_guide.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">docs/onboarding.md</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#0369a1">→</span><span class="section-text">CHANGELOG.md</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-inner"><div class="connector-line"></div><div class="connector-arrow"></div></div></div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- AGENT 18 — FINAL PRODUCT -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="agent-card" style="border-color:#86efac; box-shadow: 0 4px 24px rgba(21,128,61,0.12)">
+    <div class="agent-header" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7)" onclick="toggle('a18')">
+      <div class="agent-left">
+        <div class="agent-icon-box" style="background: linear-gradient(135deg, #16a34a, #15803d)">🎉</div>
+        <div>
+          <div class="agent-meta">
+            <span class="agent-badge" style="background:#15803d">DELIVERED</span>
+            <span class="agent-num">Agent #18</span>
+          </div>
+          <div class="agent-title">Final Product</div>
+        </div>
+      </div>
+      <span class="agent-chevron" id="chev-a18">▼</span>
+    </div>
+    <div class="agent-body" id="body-a18">
+      <div class="sections-grid">
+        <div>
+          <div class="section-title" style="color:#15803d">Deliverables</div>
+          <ul class="section-list">
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Fully functional application (deployed & live)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Complete source code (frontend + backend)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ All tests passing with ≥80% coverage</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ CI/CD pipeline active & passing</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Monitoring & alerting live</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Complete documentation suite</span></li>
+          </ul>
+        </div>
+        <div>
+          <ul class="section-list" style="margin-top:20px">
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Security audit passed (0 critical CVEs)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Performance benchmarks met (Lighthouse ≥ 80)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Accessibility compliant (WCAG 2.1 AA)</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Rollback strategy in place</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ V2 backlog created with Medium/Low items</span></li>
+            <li class="section-item"><span class="section-arrow" style="color:#15803d">→</span><span class="section-text">✅ Pipeline cost report generated</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-title">Pipeline Summary</div>
+    <div class="footer-stats">
+      <div><div class="footer-stat-n">18</div><div class="footer-stat-l">Total Agents</div></div>
+      <div><div class="footer-stat-n">4</div><div class="footer-stat-l">HITL Checkpoints</div></div>
+      <div><div class="footer-stat-n">8</div><div class="footer-stat-l">Junior Agents</div></div>
+      <div><div class="footer-stat-n">2</div><div class="footer-stat-l">Senior Leads</div></div>
+      <div><div class="footer-stat-n">2</div><div class="footer-stat-l">Review Gates</div></div>
+      <div><div class="footer-stat-n">8</div><div class="footer-stat-l">QA Test Types</div></div>
+      <div><div class="footer-stat-n">∞</div><div class="footer-stat-l">Fix Loop</div></div>
+      <div><div class="footer-stat-n">25</div><div class="footer-stat-l">Shared Files</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggle(id) {
+    const body = document.getElementById('body-' + id);
+    const chev = document.getElementById('chev-' + id);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chev.classList.toggle('open', !isOpen);
+  }
+
+  function toggleJr(id) {
+    const body = document.getElementById('body-' + id);
+    const chev = document.getElementById('chev-' + id);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chev.classList.toggle('open', !isOpen);
+  }
+
+  function toggleContext() {
+    const files = document.getElementById('ctx-files');
+    const toggle = document.getElementById('ctx-toggle');
+    const isOpen = files.classList.contains('open');
+    files.classList.toggle('open', !isOpen);
+    toggle.textContent = isOpen ? '▼ Show files' : '▲ Hide files';
+  }
+
+  function expandAll() {
+    const allBodies = document.querySelectorAll('.agent-body, .junior-body');
+    const allChevs = document.querySelectorAll('.agent-chevron, .junior-chevron');
+    allBodies.forEach(b => b.classList.add('open'));
+    allChevs.forEach(c => c.classList.add('open'));
+  }
+
+  function collapseAll() {
+    const allBodies = document.querySelectorAll('.agent-body, .junior-body');
+    const allChevs = document.querySelectorAll('.agent-chevron, .junior-chevron');
+    allBodies.forEach(b => b.classList.remove('open'));
+    allChevs.forEach(c => c.classList.remove('open'));
+  }
+</script>
+</body>
+</html>

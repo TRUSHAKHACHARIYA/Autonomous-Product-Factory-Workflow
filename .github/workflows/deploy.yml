@@ -1,0 +1,96 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  # ── Backend ──────────────────────────────────────────────────
+  api-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install uv && uv sync --frozen
+      - run: uv run ruff check app/
+      - run: uv run ruff format --check app/
+
+  api-test:
+    runs-on: ubuntu-latest
+    needs: api-lint
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install uv && uv sync --frozen
+      - run: uv run pytest -q
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+          REDIS_URL: redis://localhost:6379
+
+  api-deploy:
+    runs-on: ubuntu-latest
+    needs: [api-lint, api-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli@v2
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - run: railway service api && railway up --no-docker
+        env:
+          RAILWAY_PROJECT: ${{ secrets.RAILWAY_PROJECT }}
+      - run: railway service worker && railway up --no-docker
+
+  worker-deploy:
+    runs-on: ubuntu-latest
+    needs: [api-lint, api-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli@v2
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - run: railway service worker && railway up --no-docker
+        env:
+          RAILWAY_PROJECT: ${{ secrets.RAILWAY_PROJECT }}
+
+  # ── Frontend (Vercel auto-deploys via GitHub integration) ──
+  web-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}

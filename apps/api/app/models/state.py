@@ -16,6 +16,7 @@ class PipelineState(BaseModel):
     run_id: str
     organization_id: str
     product_idea: str
+    onboarding_data: dict = Field(default_factory=dict)
     status: Literal["pending", "running", "awaiting_approval", "awaiting_clarification", "completed", "failed"] = "pending"
     current_agent: Optional[AgentName] = None
     error: Optional[str] = None

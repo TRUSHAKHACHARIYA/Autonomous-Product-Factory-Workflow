@@ -112,7 +112,7 @@ async def agent_18_node(state: PipelineState) -> PipelineState:
 
     await _generate_final_delivery_artifact(
         state.run_id,
-        state.agent_01_output["user_input"]["project_name"],
+        state.agent_01_output["validated_form"]["project_name"],
         state.agent_02_output["complexity_score"],
         result,
         file_index,

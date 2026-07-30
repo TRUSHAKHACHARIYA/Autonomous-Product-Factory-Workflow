@@ -7,7 +7,7 @@ from app.models.state import PipelineState
 
 
 async def agent_02_node(state: PipelineState) -> PipelineState:
-    user_input = state.agent_01_output["user_input"]
+    user_input = state.agent_01_output["validated_form"]
 
     result: Agent02Output = await run_agent(
         run_id=state.run_id,

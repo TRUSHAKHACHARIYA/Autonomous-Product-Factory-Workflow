@@ -8,7 +8,7 @@ from app.models.state import PipelineState
 
 async def agent_17_node(state: PipelineState) -> PipelineState:
     input_payload = {
-        "project_identity": state.agent_01_output["user_input"],
+        "project_identity": state.agent_01_output["validated_form"],
         "complexity_score": state.agent_02_output["complexity_score"],
         "tech_stack": state.agent_04_output["tech_stack"],
         "system_architecture": state.agent_04_output["system_architecture"],

@@ -7,6 +7,8 @@ from app.agents.artifacts import save_artifact
 from app.models.agent_11 import ModuleCodeOutput, Agent11Output
 from app.models.state import PipelineState
 
+CONTEXT7_MCP = [{"type": "url", "url": "https://mcp.context7.com/mcp", "name": "context7"}]
+
 
 async def _generate_module(
     state: PipelineState,
@@ -35,6 +37,7 @@ async def _generate_module(
         user_message=json.dumps(input_payload, indent=2),
         output_schema=ModuleCodeOutput,
         max_tokens=16000,
+        mcp_servers=CONTEXT7_MCP,
     )
 
 

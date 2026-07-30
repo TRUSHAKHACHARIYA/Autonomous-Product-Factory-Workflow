@@ -61,21 +61,25 @@ function ClarificationForm({ questions, round, onSubmit }: ClarificationFormProp
 }
 
 interface Agent01Output {
-  user_input?: {
+  validated_form?: {
     project_name?: string;
-    description?: string;
+    one_liner?: string;
     platform?: string;
+    target_audience?: string;
+    problem_statement?: string;
+    must_have_features?: string[];
+    nice_to_have_features?: string[];
     tech_preferences?: string[];
-    constraints?: string[];
-    budget?: string | null;
+    integration_requirements?: string[];
+    compliance_requirements?: string[];
+    budget_range?: string | null;
     timeline?: string | null;
-    missing_info?: string[];
-    clarifying_questions?: string[];
+    team_context?: string | null;
   };
   validation_report?: {
-    project_name_present?: boolean;
-    description_present?: boolean;
-    platform_identified?: boolean;
+    consistency_check_passed?: boolean;
+    inconsistencies_found?: string[];
+    vague_features_flagged?: string[];
     overall_readiness?: string;
     readiness_reason?: string;
   };
@@ -105,7 +109,7 @@ interface Agent01CardProps {
 
 export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
   const output = agent.structured_output;
-  const userInput = output?.user_input;
+  const validatedForm = output?.validated_form;
   const validation = output?.validation_report;
   const isAwaiting = agent.status === "awaiting_clarification";
   const isCompleted = agent.status === "completed";
@@ -114,7 +118,7 @@ export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
   const pendingQuestions = output?.pending_questions ?? [];
   const pendingReason = output?.pending_readiness_reason ?? "";
 
-  if (!isAwaiting && !isCompleted && !userInput) {
+  if (!isAwaiting && !isCompleted && !validatedForm) {
     return null;
   }
 
@@ -157,21 +161,42 @@ export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
         </div>
       )}
 
-      {isCompleted && userInput && (
+      {isCompleted && validatedForm && (
         <div className="space-y-2 text-sm">
           <div>
-            <span className="font-medium">Project:</span> {userInput.project_name}
+            <span className="font-medium">Project:</span> {validatedForm.project_name}
           </div>
+          {validatedForm.one_liner && (
+            <div className="text-gray-600 italic">{validatedForm.one_liner}</div>
+          )}
           <div>
             <span className="font-medium">Platform:</span>{" "}
             <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-              {userInput.platform}
+              {validatedForm.platform}
             </span>
           </div>
-          {userInput.tech_preferences && userInput.tech_preferences.length > 0 && (
+          {validatedForm.target_audience && (
+            <div>
+              <span className="font-medium">Audience:</span> {validatedForm.target_audience}
+            </div>
+          )}
+          {validatedForm.must_have_features && validatedForm.must_have_features.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              <span className="font-medium">Must-haves:</span>
+              {validatedForm.must_have_features.map((f, i) => (
+                <span
+                  key={i}
+                  className="inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs"
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
+          )}
+          {validatedForm.tech_preferences && validatedForm.tech_preferences.length > 0 && (
             <div className="flex flex-wrap gap-1">
               <span className="font-medium">Tech:</span>
-              {userInput.tech_preferences.map((t, i) => (
+              {validatedForm.tech_preferences.map((t, i) => (
                 <span
                   key={i}
                   className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
@@ -181,27 +206,27 @@ export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
               ))}
             </div>
           )}
-          {userInput.constraints && userInput.constraints.length > 0 && (
+          {validatedForm.integration_requirements && validatedForm.integration_requirements.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              <span className="font-medium">Constraints:</span>
-              {userInput.constraints.map((c, i) => (
+              <span className="font-medium">Integrations:</span>
+              {validatedForm.integration_requirements.map((s, i) => (
                 <span
                   key={i}
-                  className="inline-block px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs"
+                  className="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs"
                 >
-                  {c}
+                  {s}
                 </span>
               ))}
             </div>
           )}
-          {userInput.budget && (
+          {validatedForm.budget_range && (
             <div>
-              <span className="font-medium">Budget:</span> {userInput.budget}
+              <span className="font-medium">Budget:</span> {validatedForm.budget_range}
             </div>
           )}
-          {userInput.timeline && (
+          {validatedForm.timeline && (
             <div>
-              <span className="font-medium">Timeline:</span> {userInput.timeline}
+              <span className="font-medium">Timeline:</span> {validatedForm.timeline}
             </div>
           )}
           {validation && (
@@ -223,9 +248,14 @@ export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
               )}
             </div>
           )}
-          {userInput.missing_info && userInput.missing_info.length > 0 && (
+          {validation?.inconsistencies_found && validation.inconsistencies_found.length > 0 && (
             <div className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-              Proceeding with documented gaps: {userInput.missing_info.join(", ")}
+              Inconsistencies: {validation.inconsistencies_found.join(", ")}
+            </div>
+          )}
+          {validation?.vague_features_flagged && validation.vague_features_flagged.length > 0 && (
+            <div className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Vague features flagged: {validation.vague_features_flagged.join(", ")}
             </div>
           )}
         </div>

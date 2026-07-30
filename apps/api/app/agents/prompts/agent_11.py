@@ -26,5 +26,10 @@ before processing — never trust an unverified webhook payload.
 
 {security_checklist}
 
+Before writing code against any external library or framework API, use the context7
+tool to fetch current documentation rather than relying on your training data —
+especially for auth libraries, database drivers, and payment/webhook SDKs where an
+outdated method signature causes real bugs.
+
 Call the emit_output tool with the complete list of files for THIS module only. Do not include \
 other modules' files. Do not include any other commentary."""

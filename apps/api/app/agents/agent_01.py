@@ -11,7 +11,7 @@ MAX_CLARIFICATION_ROUNDS = 3
 
 def _build_message(state: PipelineState) -> str:
     payload = {
-        "original_idea": state.product_idea,
+        "onboarding_form": state.onboarding_data,
         "prior_rounds": state.clarification_history,
     }
     return json.dumps(payload, indent=2)
@@ -36,21 +36,21 @@ async def agent_01_node(state: PipelineState) -> PipelineState:
         result.validation_report.overall_readiness == "NEEDS_CLARIFICATION"
         and state.clarification_round < MAX_CLARIFICATION_ROUNDS
     ):
-        output_dict["pending_questions"] = result.user_input.clarifying_questions
+        output_dict["pending_questions"] = result.clarifying_questions
         output_dict["pending_readiness_reason"] = result.validation_report.readiness_reason
 
         answers: dict = interrupt(
             {
                 "type": "clarification",
                 "round": state.clarification_round + 1,
-                "questions": result.user_input.clarifying_questions,
+                "questions": result.clarifying_questions,
                 "readiness_reason": result.validation_report.readiness_reason,
             }
         )
         new_history = state.clarification_history + [
             {
                 "round": state.clarification_round + 1,
-                "questions": result.user_input.clarifying_questions,
+                "questions": result.clarifying_questions,
                 "answers": answers,
             }
         ]
@@ -85,16 +85,16 @@ async def generate_agent_01_artifacts(run_id: str, output: Agent01Output):
     await save_artifact(
         run_id,
         "agent_01_input_layer",
-        "user_input.json",
-        json.dumps(output.user_input.model_dump(), indent=2),
+        "validated_form.json",
+        json.dumps(output.validated_form, indent=2),
     )
-    readiness = output.validation_report.overall_readiness
+    report = output.validation_report
     md = f"""# Validation Report
-- Project name: {"✅" if output.validation_report.project_name_present else "❌"}
-- Description: {"✅" if output.validation_report.description_present else "❌"}
-- Platform identified: {"✅" if output.validation_report.platform_identified else "❌"}
+- Consistency check: {"PASS" if report.consistency_check_passed else "FAIL"}
+- Inconsistencies: {", ".join(report.inconsistencies_found) if report.inconsistencies_found else "None"}
+- Vague features flagged: {", ".join(report.vague_features_flagged) if report.vague_features_flagged else "None"}
 
-**Overall readiness: {readiness}**
-{output.validation_report.readiness_reason}
+**Overall readiness: {report.overall_readiness}**
+{report.readiness_reason}
 """
     await save_artifact(run_id, "agent_01_input_layer", "validation_report.md", md)

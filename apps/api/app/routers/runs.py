@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from uuid import uuid4
 from arq import create_pool
 from arq.connections import RedisSettings
@@ -7,6 +6,7 @@ from langgraph.types import Command
 from app.config import settings
 from app.deps import get_current_org, get_current_user, supabase_admin
 from app.graph.pipeline import get_compiled_graph
+from app.models.onboarding import OnboardingFormData
 from app.models.agent_04 import ApprovalDecision
 from app.billing.quota import check_run_quota, check_concurrent_runs, increment_run_usage
 from app.audit import log_audit_event
@@ -14,10 +14,6 @@ from app.rate_limit import limiter
 from app.logging import log
 
 router = APIRouter(prefix="/runs", tags=["runs"])
-
-
-class CreateRunRequest(BaseModel):
-    product_idea: str
 
 
 async def get_redis_pool():
@@ -28,7 +24,7 @@ async def get_redis_pool():
 @limiter.limit("10/minute")
 async def create_run(
     request,
-    body: CreateRunRequest,
+    form: OnboardingFormData,
     org_id: str = Depends(get_current_org),
     user=Depends(get_current_user),
 ):
@@ -37,11 +33,13 @@ async def create_run(
 
     run_id = str(uuid4())
     thread_id = str(uuid4())
+    summary_line = f"{form.project_name}: {form.one_liner}"
     supabase_admin.table("pipeline_runs").insert({
         "id": run_id,
         "organization_id": org_id,
         "created_by": user["id"],
-        "product_idea": body.product_idea,
+        "product_idea": summary_line,
+        "onboarding_data": form.model_dump(),
         "langgraph_thread_id": thread_id,
     }).execute()
 

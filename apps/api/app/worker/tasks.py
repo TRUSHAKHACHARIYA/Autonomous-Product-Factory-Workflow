@@ -29,6 +29,7 @@ async def execute_run(ctx: dict, run_id: str):
         run_id=run_id,
         organization_id=data["organization_id"],
         product_idea=data["product_idea"],
+        onboarding_data=data.get("onboarding_data") or {},
         status="running",
     )
 

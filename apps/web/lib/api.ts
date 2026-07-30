@@ -15,14 +15,32 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-export async function createRun(token: string, orgId: string, productIdea: string) {
+export async function createRun(
+  token: string,
+  orgId: string,
+  formData: {
+    project_name: string;
+    one_liner: string;
+    platform: "Web" | "Mobile" | "API" | "All";
+    target_audience: string;
+    problem_statement: string;
+    must_have_features: string[];
+    nice_to_have_features?: string[];
+    tech_preferences?: string[];
+    integration_requirements?: string[];
+    compliance_requirements?: string[];
+    budget_range?: string | null;
+    timeline?: string | null;
+    team_context?: string | null;
+  },
+) {
   return apiFetch("/runs", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "X-Organization-Id": orgId,
     },
-    body: JSON.stringify({ product_idea: productIdea }),
+    body: JSON.stringify(formData),
   });
 }
 

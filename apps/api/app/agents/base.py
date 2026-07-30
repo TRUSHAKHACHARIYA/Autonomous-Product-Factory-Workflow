@@ -40,6 +40,7 @@ async def run_agent(
     user_message: str,
     output_schema: type[BaseModel],
     max_tokens: int = 8000,
+    mcp_servers: list[dict] | None = None,
 ) -> BaseModel:
     supabase_admin.table("agent_outputs").upsert({
         "run_id": run_id, "organization_id": organization_id,
@@ -48,7 +49,7 @@ async def run_agent(
 
     start = time.time()
     try:
-        response = await _call_claude_with_retry(
+        create_kwargs = dict(
             model=model,
             max_tokens=max_tokens,
             system=system_prompt,
@@ -60,6 +61,13 @@ async def run_agent(
             }],
             tool_choice={"type": "tool", "name": "emit_output"},
         )
+
+        if mcp_servers:
+            response = await client.beta.messages.create(
+                **create_kwargs, mcp_servers=mcp_servers, betas=["mcp-client-2025-04-04"],
+            )
+        else:
+            response = await _call_claude_with_retry(**create_kwargs)
         tool_use = next(b for b in response.content if b.type == "tool_use")
         validated = output_schema.model_validate(tool_use.input)
 
@@ -102,6 +110,7 @@ async def run_agent_with_approval(
     output_schema: type[BaseModel],
     max_tokens: int = 8000,
     max_revisions: int = 3,
+    mcp_servers: list[dict] | None = None,
 ) -> BaseModel:
     revision_notes: str | None = None
     result: BaseModel | None = None
@@ -116,6 +125,7 @@ async def run_agent_with_approval(
             user_message=build_message(revision_notes),
             output_schema=output_schema,
             max_tokens=max_tokens,
+            mcp_servers=mcp_servers,
         )
 
         supabase_admin.table("approval_gates").insert(

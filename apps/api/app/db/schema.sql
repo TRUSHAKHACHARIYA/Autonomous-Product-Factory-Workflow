@@ -24,6 +24,7 @@ create table pipeline_runs (
   organization_id uuid not null references organizations(id) on delete cascade,
   created_by uuid not null references auth.users(id),
   product_idea text not null,
+  onboarding_data jsonb not null default '{}'::jsonb,
   status text not null default 'pending',
   current_agent text,
   langgraph_thread_id text not null,

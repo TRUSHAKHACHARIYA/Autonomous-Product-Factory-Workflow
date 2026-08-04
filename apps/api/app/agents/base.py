@@ -1,16 +1,46 @@
 import time
 import asyncio
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Awaitable, Callable
 from anthropic import AsyncAnthropic, APIConnectionError, RateLimitError, APIStatusError
 from langgraph.func import task
 from langgraph.types import interrupt
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from app.config import settings
 from app.deps import supabase_admin
-from app.agents.registry import calculate_cost
+from app.agents.registry import MODEL_ROUTING, calculate_cost
+from app.billing.plans import PLAN_LIMITS
 
 client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+MAX_SCHEMA_REPAIR_ATTEMPTS = 1
+
+PAID_TIER_AGENTS = {
+    name for name, model in MODEL_ROUTING.items() if model == "claude-sonnet-5"
+}
+
+
+class PlanRequiredError(RuntimeError):
+    pass
+
+
+async def check_agent_quota(org_id: str, agent_name: str):
+    """No-op for cheap agents; raises PlanRequiredError if a paid-tier agent runs
+    on a plan that doesn't enable expensive agents. Call at the top of every node."""
+    if agent_name not in PAID_TIER_AGENTS:
+        return
+    org = (
+        supabase_admin.table("organizations")
+        .select("plan")
+        .eq("id", org_id)
+        .single()
+        .execute()
+    )
+    limits = PLAN_LIMITS.get(org.data["plan"], {})
+    if not limits.get("expensive_agents_enabled", True):
+        raise PlanRequiredError(
+            f"{agent_name} requires a paid plan. Upgrade to run the full pipeline."
+        )
 
 
 async def _call_claude_with_retry(**kwargs):
@@ -28,6 +58,54 @@ async def _call_claude_with_retry(**kwargs):
             else:
                 raise
     raise last_exc
+
+
+async def _emit_validated_output(
+    create_call: Callable[[list], Awaitable],
+    output_schema: type[BaseModel],
+    *,
+    initial_messages: list,
+    repair_attempts: int = MAX_SCHEMA_REPAIR_ATTEMPTS,
+):
+    """Calls create_call(messages) with tool_choice=emit_output until the returned
+    tool_use input validates against output_schema. On ValidationError the invalid
+    assistant turn plus a corrective user message are appended and the call is retried
+    (bounded by repair_attempts). Returns (validated, responses) or raises."""
+    messages = list(initial_messages)
+    responses: list = []
+    validation_error: ValidationError | None = None
+
+    for _ in range(repair_attempts + 1):
+        response = await create_call(messages)
+        responses.append(response)
+        tool_use = next(b for b in response.content if b.type == "tool_use")
+        try:
+            validated = output_schema.model_validate(tool_use.input)
+            return validated, responses
+        except ValidationError as e:
+            validation_error = e
+            messages = messages + [
+                {
+                    "role": "assistant",
+                    "content": [{
+                        "type": "tool_use",
+                        "id": tool_use.id,
+                        "name": tool_use.name,
+                        "input": tool_use.input,
+                    }],
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Your previous emit_output tool call did not validate against "
+                        "the required schema. Fix the errors below and call emit_output "
+                        "again with fully valid output.\n\n"
+                        f"Validation errors:\n{validation_error}"
+                    ),
+                },
+            ]
+
+    raise validation_error
 
 
 async def run_agent(
@@ -62,22 +140,29 @@ async def run_agent(
             tool_choice={"type": "tool", "name": "emit_output"},
         )
 
-        if mcp_servers:
-            response = await client.beta.messages.create(
-                **create_kwargs, mcp_servers=mcp_servers, betas=["mcp-client-2025-04-04"],
-            )
-        else:
-            response = await _call_claude_with_retry(**create_kwargs)
-        tool_use = next(b for b in response.content if b.type == "tool_use")
-        validated = output_schema.model_validate(tool_use.input)
+        async def create_call(messages):
+            kwargs = {**create_kwargs, "messages": messages}
+            if mcp_servers:
+                return await client.beta.messages.create(
+                    **kwargs, mcp_servers=mcp_servers, betas=["mcp-client-2025-04-04"],
+                )
+            return await _call_claude_with_retry(**kwargs)
 
-        cost = calculate_cost(model, response.usage.input_tokens, response.usage.output_tokens)
+        validated, responses = await _emit_validated_output(
+            create_call,
+            output_schema,
+            initial_messages=[{"role": "user", "content": user_message}],
+        )
+
+        input_tokens = sum(r.usage.input_tokens for r in responses)
+        output_tokens = sum(r.usage.output_tokens for r in responses)
+        cost = calculate_cost(model, input_tokens, output_tokens)
         supabase_admin.table("agent_outputs").update({
             "status": "completed",
             "structured_output": validated.model_dump(),
             "model_used": model,
-            "input_tokens": response.usage.input_tokens,
-            "output_tokens": response.usage.output_tokens,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
             "cost_usd": cost,
             "duration_ms": int((time.time() - start) * 1000),
         }).eq("run_id", run_id).eq("agent_name", agent_name).eq("organization_id", organization_id).execute()

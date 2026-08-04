@@ -1,6 +1,6 @@
 import json
 from langgraph.types import interrupt
-from app.agents.base import run_agent
+from app.agents.base import check_agent_quota, run_agent
 from app.agents.prompts.agent_01 import AGENT_01_SYSTEM_PROMPT
 from app.agents.artifacts import save_artifact
 from app.models.agent_01 import Agent01Output
@@ -18,6 +18,8 @@ def _build_message(state: PipelineState) -> str:
 
 
 async def agent_01_node(state: PipelineState) -> PipelineState:
+    await check_agent_quota(state.organization_id, "agent_01_input_layer")
+
     result: Agent01Output = await run_agent(
         run_id=state.run_id,
         organization_id=state.organization_id,
@@ -92,6 +94,7 @@ async def generate_agent_01_artifacts(run_id: str, output: Agent01Output):
     md = f"""# Validation Report
 - Consistency check: {"PASS" if report.consistency_check_passed else "FAIL"}
 - Inconsistencies: {", ".join(report.inconsistencies_found) if report.inconsistencies_found else "None"}
+- Missing fields: {", ".join(report.missing_fields) if report.missing_fields else "None"}
 - Vague features flagged: {", ".join(report.vague_features_flagged) if report.vague_features_flagged else "None"}
 
 **Overall readiness: {report.overall_readiness}**

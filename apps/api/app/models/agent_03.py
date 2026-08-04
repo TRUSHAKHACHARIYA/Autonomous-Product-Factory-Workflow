@@ -44,12 +44,40 @@ class RiskEntry(BaseModel):
     probability: Literal["Low", "Medium", "High"]
     impact: Literal["Low", "Medium", "High"]
     mitigation: str
+    related_epic_id: str | None = None
 
 
 class SprintPlan(BaseModel):
     sprint: int
     task_ids: list[str]
     total_points: int
+
+
+def find_dependency_cycle(tasks: list[Task]) -> list[str] | None:
+    """DFS over depends_on. Returns the cycle path (e.g. ["T-01", "T-02", "T-01"])
+    if one exists, else None."""
+    graph = {t.id: list(t.depends_on) for t in tasks}
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {tid: WHITE for tid in graph}
+    path: list[str] = []
+
+    def visit(nid: str) -> bool:
+        color[nid] = GRAY
+        path.append(nid)
+        for dep in graph[nid]:
+            if color[dep] == GRAY:
+                path.append(dep)
+                return True
+            if color[dep] == WHITE and visit(dep):
+                return True
+        path.pop()
+        color[nid] = BLACK
+        return False
+
+    for tid in graph:
+        if color[tid] == WHITE and visit(tid):
+            return path
+    return None
 
 
 class Agent03Output(BaseModel):
@@ -64,6 +92,7 @@ class Agent03Output(BaseModel):
     @model_validator(mode="after")
     def validate_task_references(self):
         task_ids = {t.id for t in self.tasks}
+        epic_ids = {e.id for e in self.epics}
         for epic in self.epics:
             for tid in epic.task_ids:
                 if tid not in task_ids:
@@ -72,4 +101,25 @@ class Agent03Output(BaseModel):
             for dep in task.depends_on:
                 if dep not in task_ids:
                     raise ValueError(f"Task {task.id} depends_on unknown task {dep}")
+        for sprint in self.sprint_plan:
+            for tid in sprint.task_ids:
+                if tid not in task_ids:
+                    raise ValueError(f"Sprint {sprint.sprint} references unknown task {tid}")
+        for risk in self.risk_register:
+            if risk.related_epic_id and risk.related_epic_id not in epic_ids:
+                raise ValueError(f"Risk references unknown epic {risk.related_epic_id}")
+        return self
+
+    @model_validator(mode="after")
+    def validate_no_dependency_cycles(self):
+        cycle = find_dependency_cycle(self.tasks)
+        if cycle:
+            raise ValueError(f"Circular dependency detected: {' -> '.join(cycle)}")
+        return self
+
+    @model_validator(mode="after")
+    def recompute_sprint_points(self):
+        points = {t.id: t.points for t in self.tasks}
+        for sprint in self.sprint_plan:
+            sprint.total_points = sum(points[tid] for tid in sprint.task_ids)
         return self

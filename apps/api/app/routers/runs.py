@@ -81,7 +81,7 @@ async def stream_run(run_id: str):
         last_agents = {}
         while True:
             run = supabase_admin.table("pipeline_runs").select("status").eq("id", run_id).single().execute()
-            if run.data["status"] in ("completed", "failed"):
+            if run.data["status"] in ("completed", "failed", "awaiting_upgrade"):
                 yield {"event": "agent_update", "data": json.dumps({"run_status": run.data["status"]})}
                 break
 

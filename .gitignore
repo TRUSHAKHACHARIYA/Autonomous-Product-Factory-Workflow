@@ -11,12 +11,9 @@ build/
 out/
 
 # Environment
-.env
-.env.local
 apps/api/.env
 
 # IDE
-.vscode/
 .idea/
 
 # OS
@@ -25,3 +22,4 @@ Thumbs.db
 
 # Logs
 web-output.log
+config.bat

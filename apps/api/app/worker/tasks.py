@@ -7,6 +7,7 @@ from app.config import settings
 from app.deps import supabase_admin
 from app.models.state import PipelineState
 from app.graph.pipeline import get_compiled_graph, init_graph
+from app.agents.base import PlanRequiredError
 from app.logging import log
 
 SANDBOX_MAX_AGE_SECONDS = 600
@@ -57,6 +58,13 @@ async def execute_run(ctx: dict, run_id: str):
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }).eq("id", run_id).execute()
             log.info("run.completed", run_id=run_id)
+    except PlanRequiredError as e:
+        supabase_admin.table("pipeline_runs").update({
+            "status": "awaiting_upgrade",
+            "error": str(e),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", run_id).execute()
+        log.warning("run.plan_required", run_id=run_id, error=str(e))
     except Exception as e:
         supabase_admin.table("pipeline_runs").update({
             "status": "failed", "error": str(e),

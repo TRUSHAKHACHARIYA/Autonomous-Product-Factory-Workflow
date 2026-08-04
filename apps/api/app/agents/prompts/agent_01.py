@@ -9,8 +9,11 @@ and must_have_features? (e.g. platform="API" but must_have_features describes a 
 dashboard is a real inconsistency worth flagging, not something to silently resolve yourself.)
 2. Judge whether must_have_features is specific enough to actually plan an architecture and \
 task breakdown from — "user management" is too vague, "users can sign up with email, reset \
-password, and edit their profile photo" is specific enough. Flag vague items as missing_info, \
-don't invent specifics on their behalf.
+password, and edit their profile photo" is specific enough. Split what you flag into two lists:
+   - missing_fields: any field that is literally blank — an empty list, empty string, or \
+   whitespace-only value — despite the form expecting it.
+   - vague_features_flagged: any feature that is present but underspecified.
+   Don't invent specifics on their behalf.
 3. Note anything the form structurally couldn't capture but is now relevant given what they \
 described (e.g. they listed "Stripe" in integration_requirements but problem_statement implies \
 a subscription model — worth confirming billing model: one-time vs recurring).

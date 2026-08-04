@@ -1,13 +1,43 @@
 import json
-from app.agents.base import run_agent
+from app.agents.base import check_agent_quota, run_agent
 from app.agents.prompts.agent_02 import AGENT_02_SYSTEM_PROMPT
 from app.agents.artifacts import save_artifact
 from app.models.agent_02 import Agent02Output
 from app.models.state import PipelineState
 
+COMPLEXITY_FR_RANGES = {
+    "S": (1, 10),
+    "M": (11, 25),
+    "L": (26, 40),
+    "XL": (41, 1000),
+}
+
+
+def complexity_sanity_check(output: Agent02Output) -> list[str]:
+    """Heuristic FR-count vs complexity-score guardrail. Returns warnings only —
+    never blocks a run."""
+    fr_count = len(output.functional_requirements)
+    score = output.complexity_score.score
+    low, high = COMPLEXITY_FR_RANGES[score]
+    warnings = []
+    if fr_count < low:
+        warnings.append(
+            f"complexity '{score}' looks high for {fr_count} FRs (expected at least {low})"
+        )
+    if fr_count > high:
+        warnings.append(
+            f"complexity '{score}' looks low for {fr_count} FRs (expected at most {high})"
+        )
+    return warnings
+
 
 async def agent_02_node(state: PipelineState) -> PipelineState:
-    user_input = state.agent_01_output["validated_form"]
+    await check_agent_quota(state.organization_id, "agent_02_requirement_analyst")
+
+    payload = {
+        "validated_form": state.agent_01_output["validated_form"],
+        "validation_report": state.agent_01_output.get("validation_report", {}),
+    }
 
     result: Agent02Output = await run_agent(
         run_id=state.run_id,
@@ -15,7 +45,7 @@ async def agent_02_node(state: PipelineState) -> PipelineState:
         agent_name="agent_02_requirement_analyst",
         model="claude-sonnet-5",
         system_prompt=AGENT_02_SYSTEM_PROMPT,
-        user_message=json.dumps(user_input, indent=2),
+        user_message=json.dumps(payload, indent=2),
         output_schema=Agent02Output,
     )
 
@@ -57,3 +87,12 @@ async def generate_agent_02_artifacts(run_id: str, output: Agent02Output):
 
     await save_artifact(run_id, "agent_02_requirement_analyst", "complexity_score.json",
                          json.dumps(output.complexity_score.model_dump(), indent=2))
+
+    warnings = complexity_sanity_check(output)
+    if warnings:
+        await save_artifact(
+            run_id,
+            "agent_02_requirement_analyst",
+            "complexity_warnings.md",
+            "## Complexity sanity warnings\n" + "\n".join(f"- {w}" for w in warnings),
+        )

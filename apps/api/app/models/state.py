@@ -17,7 +17,7 @@ class PipelineState(BaseModel):
     organization_id: str
     product_idea: str
     onboarding_data: dict = Field(default_factory=dict)
-    status: Literal["pending", "running", "awaiting_approval", "awaiting_clarification", "completed", "failed"] = "pending"
+    status: Literal["pending", "running", "awaiting_approval", "awaiting_clarification", "awaiting_upgrade", "completed", "failed"] = "pending"
     current_agent: Optional[AgentName] = None
     error: Optional[str] = None
 
@@ -37,6 +37,10 @@ class PipelineState(BaseModel):
     agent_14_output: Optional[dict] = None
     agent_14_bugs: list[dict] = Field(default_factory=list)
     agent_15_output: Optional[dict] = None
+    agent_16_output: Optional[dict] = None
+    agent_17_output: Optional[dict] = None
+    agent_18_output: Optional[dict] = None
+    agent_20_output: Optional[dict] = None
 
     fe_gate_cycle: int = 0
     be_gate_cycle: int = 0

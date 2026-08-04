@@ -79,6 +79,7 @@ interface Agent01Output {
   validation_report?: {
     consistency_check_passed?: boolean;
     inconsistencies_found?: string[];
+    missing_fields?: string[];
     vague_features_flagged?: string[];
     overall_readiness?: string;
     readiness_reason?: string;
@@ -251,6 +252,11 @@ export function Agent01Card({ agent, runId, onClarify }: Agent01CardProps) {
           {validation?.inconsistencies_found && validation.inconsistencies_found.length > 0 && (
             <div className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
               Inconsistencies: {validation.inconsistencies_found.join(", ")}
+            </div>
+          )}
+          {validation?.missing_fields && validation.missing_fields.length > 0 && (
+            <div className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Missing fields: {validation.missing_fields.join(", ")}
             </div>
           )}
           {validation?.vague_features_flagged && validation.vague_features_flagged.length > 0 && (

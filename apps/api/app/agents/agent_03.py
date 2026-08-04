@@ -1,5 +1,5 @@
 import json
-from app.agents.base import run_agent
+from app.agents.base import check_agent_quota, run_agent
 from app.agents.prompts.agent_03 import AGENT_03_SYSTEM_PROMPT
 from app.agents.artifacts import save_artifact
 from app.models.agent_03 import Agent03Output
@@ -7,12 +7,16 @@ from app.models.state import PipelineState
 
 
 async def agent_03_node(state: PipelineState) -> PipelineState:
+    await check_agent_quota(state.organization_id, "agent_03_project_manager")
+
     agent_02 = state.agent_02_output
     input_payload = {
         "functional_requirements": agent_02["functional_requirements"],
         "non_functional_requirements": agent_02["non_functional_requirements"],
         "personas": agent_02["personas"],
         "complexity_score": agent_02["complexity_score"],
+        "user_journeys": agent_02.get("user_journeys", []),
+        "ambiguities": agent_02.get("ambiguities", []),
     }
 
     result: Agent03Output = await run_agent(
@@ -65,8 +69,9 @@ async def generate_agent_03_artifacts(run_id: str, output: Agent03Output):
     )
     await save_artifact(run_id, "agent_03_project_manager", "acceptance_criteria.md", ac_md)
 
-    risk_md = "| Risk | Probability | Impact | Mitigation |\n|---|---|---|---|\n" + "\n".join(
-        f"| {r.risk} | {r.probability} | {r.impact} | {r.mitigation} |" for r in output.risk_register
+    risk_md = "| Risk | Probability | Impact | Mitigation | Related Epic |\n|---|---|---|---|---|\n" + "\n".join(
+        f"| {r.risk} | {r.probability} | {r.impact} | {r.mitigation} | {r.related_epic_id or ''} |"
+        for r in output.risk_register
     )
     await save_artifact(run_id, "agent_03_project_manager", "risk_register.md", risk_md)
 
